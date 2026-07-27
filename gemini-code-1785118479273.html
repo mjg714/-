@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ouroboros - Abandoned Console</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --console-color: #2a2a2e;
+            --screen-bg: #1a1c1a;
+            --glow-color: rgba(100, 255, 100, 0.15);
+            --crt-green: #33ff33;
+            --crt-red: #ff3333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column; /* 세로 배치로 변경 */
+            justify-content: flex-start; /* 상단부터 배치 */
+            align-items: center;
+            min-height: 100vh; /* 화면을 넘어가도 스크롤 되도록 변경 */
+            overflow-y: auto; /* 스크롤 활성화 */
+            overflow-x: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 50px 20px; /* 위아래 여백 추가 */
+            gap: 50px; /* 게임기와 댓글창 사이 간격 */
+        }
+
+        /* --- Ambient Room Effect --- */
+        body::before {
+            content: '';
+            position: fixed; /* 스크롤 시에도 배경 효과 고정 */
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.9) 100%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* --- Handheld Console Body --- */
+        .console {
+            position: relative;
+            width: 420px;
+            height: 650px;
+            background: var(--console-color);
+            border-radius: 40px 40px 60px 60px;
+            box-shadow: 
+                inset 5px 5px 15px rgba(255,255,255,0.05),
+                inset -5px -5px 15px rgba(0,0,0,0.5),
+                0 30px 60px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            border: 2px solid #1a1a1c;
+            transform: perspective(1000px) rotateX(5deg);
+            z-index: 20; /* 배경 효과 위로 올림 */
+            flex-shrink: 0; /* 크기 축소 방지 */
+        }
+
+        /* Scratches and Wear */
+        .console::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.02) 48%, transparent 51%),
+                linear-gradient(-30deg, transparent 20%, rgba(255,255,255,0.01) 22%, transparent 25%);
+            pointer-events: none;
+            border-radius: inherit;
+        }
+
+        /* --- Screen Area --- */
+        .screen-frame {
+            position: relative;
+            width: 340px;
+            height: 340px;
+            background: #111;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,1);
+            margin-bottom: 50px;
+            border-bottom: 3px solid rgba(255,255,255,0.05);
+        }
+
+        .screen-bezel {
+            width: 100%;
+            height: 100%;
+            background: var(--screen-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+
+        /* --- CRT Effects --- */
+        .crt-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .scanlines {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(18, 16, 16, 0) 50%,
+                rgba(0, 0, 0, 0.25) 50%
+            );
+            background-size: 100% 4px;
+        }
+
+        .flicker {
+            width: 100%;
+            height: 100%;
+            background: rgba(18, 16, 16, 0.05);
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.1; }
+            50% { opacity: 0.02; }
+            100% { opacity: 0.08; }
+        }
+
+        .vignette {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.5) 100%);
+        }
+
+        /* --- Controls Simulation --- */
+        .controls {
+            width: 80%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .d-pad {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+
+        .d-pad-btn {
+            position: absolute;
+            background: #1a1a1c;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .d-pad-up { top: 0; left: 35px; width: 30px; height: 35px; border-radius: 5px 5px 0 0; }
+        .d-pad-down { bottom: 0; left: 35px; width: 30px; height: 35px; border-radius: 0 0 5px 5px; }
+        .d-pad-left { left: 0; top: 35px; width: 35px; height: 30px; border-radius: 5px 0 0 5px; }
+        .d-pad-right { right: 0; top: 35px; width: 35px; height: 30px; border-radius: 0 5px 5px 0; }
+        .d-pad-center { left: 35px; top: 35px; width: 30px; height: 30px; background: #151517; }
+
+        .action-btns {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-a {
+            width: 50px;
+            height: 50px;
+            background: #8b1a1a;
+            border-radius: 50%;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.6), inset 2px 2px 5px rgba(255,255,255,0.1);
+            border: 1px solid #5a1111;
+        }
+
+        /* --- UI Elements --- */
+        .start-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--crt-green);
+            text-align: center;
+            font-size: 14px;
+            text-shadow: 0 0 5px var(--crt-green);
+            z-index: 10;
+            width: 80%;
+        }
+
+        .glitch-text {
+            animation: glitch 2s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            1% { transform: translate(-2px, 2px); }
+            2% { transform: translate(2px, -2px); }
+            3% { transform: translate(0); }
+            100% { transform: translate(0); }
+        }
+
+        /* Hidden instructions for player */
+        .hint {
+            color: #555;
+            font-size: 14px;
+            z-index: 20;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* --- Comments Section --- */
+        .comments-container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(20, 20, 20, 0.85);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 20; /* 클릭 가능하도록 배경보다 위로 설정 */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="hint">CLICK TO INITIALIZE AUDIO | WASD OR ARROWS TO PLAY</div>
+    
+    <div class="console">
+        <div class="screen-frame">
+            <div class="screen-bezel">
+                <canvas id="gameCanvas"></canvas>
+                <div class="crt-overlay">
+                    <div class="scanlines"></div>
+                    <div class="flicker"></div>
+                    <div class="vignette"></div>
+                </div>
+                <div id="startPrompt" class="start-prompt">
+                    <p class="glitch-text">P R O J E C T</p>
+                    <h2 class="glitch-text" style="font-size: 24px; margin: 10px 0;">OUROBOROS</h2>
+                    <p style="margin-top: 40px; font-size: 12px; opacity: 0.8;">PRESS ANY KEY TO START</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="d-pad">
+                <div class="d-pad-btn d-pad-up"></div>
+                <div class="d-pad-btn d-pad-down"></div>
+                <div class="d-pad-btn d-pad-left"></div>
+                <div class="d-pad-btn d-pad-right"></div>
+                <div class="d-pad-btn d-pad-center"></div>
+            </div>
+            <div class="action-btns">
+                <div class="btn-a"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 댓글 기능 영역 -->
+    <div class="comments-container">
+        <div id="disqus_thread"></div>
+        <script>
+            (function() { // DON'T EDIT BELOW THIS LINE
+            var d = document, s = d.createElement('script');
+            s.src = 'https://baemgeim.disqus.com/embed.js';
+            s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startPrompt = document.getElementById('startPrompt');
+
+        // Game Configuration
+        const GRID_SIZE = 20;
+        const TILE_COUNT = 15; // 15x15 grid (300x300 canvas internal)
+        canvas.width = 300;
+        canvas.height = 300;
+
+        let snake = [{ x: 7, y: 7 }];
+        let food = { x: 3, y: 3 };
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+        let gameLoop = null;
+        let isStarted = false;
+        let speed = 150;
+        let horrorLevel = 0;
+
+        // --- Audio Engine ---
+        let audioCtx = null;
+        let droneNode = null;
+        let gainNode = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Background Drone
+            droneNode = audioCtx.createOscillator();
+            droneNode.type = 'sawtooth';
+            droneNode.frequency.setValueAtTime(40, audioCtx.currentTime); // Low growl
+            
+            const lowPass = audioCtx.createBiquadFilter();
+            lowPass.type = 'lowpass';
+            lowPass.frequency.setValueAtTime(100, audioCtx.currentTime);
+            
+            gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            
+            droneNode.connect(lowPass);
+            lowPass.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            droneNode.start();
+        }
+
+        function playBeep(freq, type = 'sine', duration = 0.1, vol = 0.1) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            g.gain.setValueAtTime(vol, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.connect(g);
+            g.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // --- Glitch Manager ---
+        function updateHorror() {
+            horrorLevel = Math.floor(score / 5);
+            if (gainNode) {
+                gainNode.gain.setTargetAtTime(0.05 + (horrorLevel * 0.01), audioCtx.currentTime, 0.5);
+            }
+            
+            if (score > 10 && Math.random() < 0.05) {
+                triggerGlitch();
+            }
+        }
+
+        function triggerGlitch() {
+            canvas.style.transform = `translate(${Math.random()*4-2}px, ${Math.random()*4-2}px) scale(${1 + Math.random()*0.02})`;
+            setTimeout(() => canvas.style.transform = 'none', 50);
+            playBeep(Math.random() * 200 + 50, 'square', 0.05, 0.02);
+        }
+
+        // --- Game Logic ---
+        function draw() {
+            // Clear Screen (CRT style)
+            ctx.fillStyle = '#1a1c1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Food
+            ctx.fillStyle = horrorLevel > 4 ? '#ff0000' : '#33ff33';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = ctx.fillStyle;
+            
+            if (horrorLevel > 6 && Math.random() < 0.1) {
+                // Ghost food
+                ctx.globalAlpha = 0.3;
+            }
+            ctx.fillRect(food.x * GRID_SIZE + 2, food.y * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4);
+            ctx.globalAlpha = 1.0;
+
+            // Draw Snake
+            snake.forEach((part, index) => {
+                let color = '#33ff33';
+                if (horrorLevel > 3 && index % 3 === 0) color = '#22cc22';
+                if (horrorLevel > 8) color = `rgb(${Math.random()*100}, ${150 + Math.random()*105}, ${Math.random()*100})`;
+                
+                ctx.fillStyle = color;
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = color;
+                
+                // As the game gets creepier, the snake might jitter
+                const jitterX = horrorLevel > 5 ? Math.random() * 2 - 1 : 0;
+                const jitterY = horrorLevel > 5 ? Math.random() * 2 - 1 : 0;
+                
+                ctx.fillRect(part.x * GRID_SIZE + 1 + jitterX, part.y * GRID_SIZE + 1 + jitterY, GRID_SIZE - 2, GRID_SIZE - 2);
+            });
+
+            // UI (Score)
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(51, 255, 51, 0.5)';
+            ctx.font = '10px Courier New';
+            let scoreLabel = `DATA_VAL: ${score.toString().padStart(3, '0')}`;
+            if (horrorLevel > 7 && Math.random() < 0.05) scoreLabel = "HE_IS_HERE";
+            ctx.fillText(scoreLabel, 10, 20);
+        }
+
+        function move() {
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            
+            // Wall Collision
+            if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
+                gameOver();
+                return;
+            }
+
+            // Self Collision
+            if (snake.some((part, index) => index !== 0 && part.x === head.x && part.y === head.y)) {
+                gameOver();
+                return;
+            }
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                playBeep(200 + score * 10, 'sine', 0.1, 0.15);
+                updateHorror();
+                placeFood();
+                speed = Math.max(70, 150 - score * 2);
+                clearInterval(gameLoop);
+                gameLoop = setInterval(step, speed);
+            } else {
+                snake.pop();
+            }
+        }
+
+        function placeFood() {
+            food = {
+                x: Math.floor(Math.random() * TILE_COUNT),
+                y: Math.floor(Math.random() * TILE_COUNT)
+            };
+            // Don't place food on snake
+            if (snake.some(part => part.x === food.x && part.y === food.y)) {
+                placeFood();
+            }
+        }
+
+        function step() {
+            if (dx === 0 && dy === 0) return;
+            move();
+            draw();
+        }
+
+        function gameOver() {
+            clearInterval(gameLoop);
+            isStarted = false;
+            playBeep(50, 'sawtooth', 0.5, 0.3);
+            
+            startPrompt.style.display = 'block';
+            startPrompt.innerHTML = `
+                <p class="glitch-text" style="color: #ff3333;">CONNECTION LOST</p>
+                <h2 style="font-size: 20px; margin: 10px 0; color: #ff3333;">SYSTEM FAILURE</h2>
+                <p style="margin-top: 40px; font-size: 10px; opacity: 0.6;">FINAL_SCORE: ${score}</p>
+                <p style="margin-top: 10px; font-size: 10px; opacity: 0.8;">PRESS ANY KEY TO REBOOT</p>
+            `;
+            
+            // Final Scare
+            if (horrorLevel > 5) {
+                document.body.style.backgroundColor = '#100';
+                setTimeout(() => document.body.style.backgroundColor = 'var(--bg-color)', 200);
+            }
+        }
+
+        function resetGame() {
+            snake = [{ x: 7, y: 7 }];
+            dx = 0; dy = 0; score = 0; horrorLevel = 0;
+            speed = 150;
+            placeFood();
+            startPrompt.style.display = 'none';
+            isStarted = true;
+            clearInterval(gameLoop);
+            gameLoop = setInterval(step, speed);
+            draw();
+        }
+
+        // --- Input Handling ---
+        window.addEventListener('keydown', e => {
+            // 스크롤 등의 기본 동작을 방지하려면 화살표 키와 스페이스바의 기본 동작을 막을 수 있습니다.
+            if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+
+            initAudio(); // Initialize audio on first interaction
+            
+            if (!isStarted) {
+                resetGame();
+                return;
+            }
+
+            const key = e.key.toLowerCase();
+            
+            if ((key === 'w' || key === 'arrowup') && dy === 0) { dx = 0; dy = -1; }
+            if ((key === 's' || key === 'arrowdown') && dy === 0) { dx = 0; dy = 1; }
+            if ((key === 'a' || key === 'arrowleft') && dx === 0) { dx = -1; dy = 0; }
+            if ((key === 'd' || key === 'arrowright') && dx === 0) { dx = 1; dy = 0; }
+            
+            playBeep(100, 'triangle', 0.02, 0.05);
+        });
+
+        // Initial Draw
+        draw();
+    </script>
+</body>
+</html>
