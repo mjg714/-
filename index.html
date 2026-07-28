@@ -3,515 +3,1119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ouroboros - Abandoned Console</title>
+    <title>트럼프 카드 - 라스베가스 원카드 카지노</title>
     <style>
-        :root {
-            --bg-color: #050505;
-            --console-color: #2a2a2e;
-            --screen-bg: #1a1c1a;
-            --glow-color: rgba(100, 255, 100, 0.15);
-            --crt-green: #33ff33;
-            --crt-red: #ff3333;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
-
         body {
-            background-color: var(--bg-color);
-            display: flex;
-            flex-direction: column; /* 세로 배치로 변경 */
-            justify-content: flex-start; /* 상단부터 배치 */
-            align-items: center;
-            min-height: 100vh; /* 화면을 넘어가도 스크롤 되도록 변경 */
-            overflow-y: auto; /* 스크롤 활성화 */
-            overflow-x: hidden;
-            font-family: 'Courier New', Courier, monospace;
-            padding: 50px 20px; /* 위아래 여백 추가 */
-            gap: 50px; /* 게임기와 댓글창 사이 간격 */
-        }
-
-        /* --- Ambient Room Effect --- */
-        body::before {
-            content: '';
-            position: fixed; /* 스크롤 시에도 배경 효과 고정 */
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.9) 100%);
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        /* --- Handheld Console Body --- */
-        .console {
-            position: relative;
-            width: 420px;
-            height: 650px;
-            background: var(--console-color);
-            border-radius: 40px 40px 60px 60px;
-            box-shadow: 
-                inset 5px 5px 15px rgba(255,255,255,0.05),
-                inset -5px -5px 15px rgba(0,0,0,0.5),
-                0 30px 60px rgba(0,0,0,0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
-            border: 2px solid #1a1a1c;
-            transform: perspective(1000px) rotateX(5deg);
-            z-index: 20; /* 배경 효과 위로 올림 */
-            flex-shrink: 0; /* 크기 축소 방지 */
-        }
-
-        /* Scratches and Wear */
-        .console::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #050811; 
             background-image: 
-                linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.02) 48%, transparent 51%),
-                linear-gradient(-30deg, transparent 20%, rgba(255,255,255,0.01) 22%, transparent 25%);
-            pointer-events: none;
-            border-radius: inherit;
-        }
-
-        /* --- Screen Area --- */
-        .screen-frame {
-            position: relative;
-            width: 340px;
-            height: 340px;
-            background: #111;
-            border-radius: 15px;
+                radial-gradient(circle at 50% 15%, #1e1b4b 0%, #050811 75%),
+                repeating-linear-gradient(45deg, rgba(234,179,8,0.02) 0px, rgba(234,179,8,0.02) 2px, transparent 2px, transparent 6px);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 0;
             padding: 15px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,1);
-            margin-bottom: 50px;
-            border-bottom: 3px solid rgba(255,255,255,0.05);
+            user-select: none;
+            overflow-x: hidden;
+            min-height: 100vh;
         }
-
-        .screen-bezel {
-            width: 100%;
-            height: 100%;
-            background: var(--screen-bg);
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 0 15px var(--glow-color);
+        
+        h1 { 
+            margin: 5px 0; 
+            color: #facc15; 
+            text-shadow: 0 0 15px #eab308, 0 0 30px rgba(234, 179, 8, 0.5);
+            letter-spacing: 3px;
+            font-size: 30px;
         }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-            image-rendering: pixelated;
-        }
-
-        /* --- CRT Effects --- */
-        .crt-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        .scanlines {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                to bottom,
-                rgba(18, 16, 16, 0) 50%,
-                rgba(0, 0, 0, 0.25) 50%
-            );
-            background-size: 100% 4px;
-        }
-
-        .flicker {
-            width: 100%;
-            height: 100%;
-            background: rgba(18, 16, 16, 0.05);
-            animation: flicker 0.15s infinite;
-        }
-
-        @keyframes flicker {
-            0% { opacity: 0.1; }
-            50% { opacity: 0.02; }
-            100% { opacity: 0.08; }
-        }
-
-        .vignette {
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.5) 100%);
-        }
-
-        /* --- Controls Simulation --- */
-        .controls {
-            width: 80%;
+        
+        .top-bar {
+            max-width: 850px;
+            margin: 0 auto 12px auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 2px solid #eab308;
+            box-shadow: 0 0 25px rgba(234,179,8,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+            box-sizing: border-box;
+        }
+        .coin-display {
+            font-size: 20px;
+            font-weight: bold;
+            color: #facc15;
+            text-shadow: 0 0 10px rgba(250, 204, 21, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .bet-info-badge {
+            background: rgba(234, 179, 8, 0.15);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(234, 179, 8, 0.4);
+            font-size: 14px;
+            color: #fde047;
         }
 
-        .d-pad {
+        .small-btn {
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            background: linear-gradient(to bottom, #ef4444, #dc2626);
+            color: white;
+            border: 1px solid #f87171;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .small-btn:hover { background: linear-gradient(to bottom, #dc2626, #b91c1c); transform: translateY(-1px); }
+
+        /* --- 모달 공통 (베팅 & 상점) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .modal-box {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 2px solid #facc15;
+            padding: 25px 35px;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(250, 204, 21, 0.4);
+            text-align: center;
+            width: 400px;
+            box-sizing: border-box;
+        }
+        .modal-box h2 { color: #facc15; margin-top: 0; text-shadow: 0 0 10px rgba(250,204,21,0.5); }
+        
+        /* 상점 아이템 카드 */
+        .shop-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .shop-item {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #475569;
+            padding: 10px 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .shop-item.purchased {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+        .shop-info { text-align: left; }
+        .shop-info div:first-child { font-weight: bold; color: #f8fafc; font-size: 14px; }
+        .shop-info div:last-child { font-size: 12px; color: #94a3b8; }
+        .buy-btn {
+            background: #eab308;
+            color: #0f172a;
+            border: none;
+            padding: 6px 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .buy-btn:hover { background: #facc15; transform: scale(1.05); }
+        .buy-btn:disabled { background: #334155; color: #64748b; cursor: not-allowed; transform: none; }
+
+        .bet-input-container {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .bet-input-container input {
+            width: 120px;
+            padding: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            background: #0b0f19;
+            border: 2px solid #374151;
+            color: #facc15;
+            border-radius: 8px;
+            outline: none;
+        }
+        .chip-presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+        .chip-btn {
+            background: #334155;
+            border: 1px solid #64748b;
+            color: white;
+            padding: 6px 0;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chip-btn:hover { background: #475569; border-color: #facc15; color: #facc15; }
+        
+        .main-action-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            background: linear-gradient(to bottom, #22c55e, #15803d);
+            border: 1px solid #4ade80;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+            transition: all 0.2s;
+        }
+        .main-action-btn:hover { background: linear-gradient(to bottom, #16a34a, #166534); transform: translateY(-2px); }
+
+        /* --- 카지노 럭셔리 게임 보드 맵 --- */
+        .game-board {
+            max-width: 850px;
+            margin: 0 auto;
+            background: radial-gradient(circle at center, #065f46 0%, #022c22 85%);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9), inset 0 0 50px rgba(0,0,0,0.7);
+            border: 5px solid #d97706;
             position: relative;
-            width: 100px;
-            height: 100px;
         }
-
-        .d-pad-btn {
+        .game-board::before {
+            content: '';
             position: absolute;
-            background: #1a1a1c;
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            top: 6px; left: 6px; right: 6px; bottom: 6px;
+            border: 2px dashed rgba(250, 204, 21, 0.4);
+            border-radius: 14px;
+            pointer-events: none;
         }
 
-        .d-pad-up { top: 0; left: 35px; width: 30px; height: 35px; border-radius: 5px 5px 0 0; }
-        .d-pad-down { bottom: 0; left: 35px; width: 30px; height: 35px; border-radius: 0 0 5px 5px; }
-        .d-pad-left { left: 0; top: 35px; width: 35px; height: 30px; border-radius: 5px 0 0 5px; }
-        .d-pad-right { right: 0; top: 35px; width: 35px; height: 30px; border-radius: 0 5px 5px 0; }
-        .d-pad-center { left: 35px; top: 35px; width: 30px; height: 30px; background: #151517; }
+        .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 2px, 0); }
+            20%, 80% { transform: translate3d(4px, -2px, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 4px, 0); }
+            40%, 60% { transform: translate3d(6px, -4px, 0); }
+        }
 
-        .action-btns {
-            width: 80px;
-            height: 80px;
+        .player-info {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #d1d5db;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        .hand {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 140px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .hand-wave {
+            animation: handWaveAnim 0.6s ease-in-out;
+        }
+        @keyframes handWaveAnim {
+            0% { transform: translateY(0); }
+            30% { transform: translateY(-25px); }
+            60% { transform: translateY(20px); }
+            100% { transform: translateY(0); }
+        }
+
+        .center-table {
             display: flex;
             justify-content: center;
             align-items: center;
-        }
-
-        .btn-a {
-            width: 50px;
-            height: 50px;
-            background: #8b1a1a;
-            border-radius: 50%;
-            box-shadow: 3px 3px 10px rgba(0,0,0,0.6), inset 2px 2px 5px rgba(255,255,255,0.1);
-            border: 1px solid #5a1111;
-        }
-
-        /* --- UI Elements --- */
-        .start-prompt {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--crt-green);
-            text-align: center;
-            font-size: 14px;
-            text-shadow: 0 0 5px var(--crt-green);
-            z-index: 10;
-            width: 80%;
-        }
-
-        .glitch-text {
-            animation: glitch 2s infinite;
-        }
-
-        @keyframes glitch {
-            0% { transform: translate(0); }
-            1% { transform: translate(-2px, 2px); }
-            2% { transform: translate(2px, -2px); }
-            3% { transform: translate(0); }
-            100% { transform: translate(0); }
-        }
-
-        /* Hidden instructions for player */
-        .hint {
-            color: #555;
-            font-size: 14px;
-            z-index: 20;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        /* --- Comments Section --- */
-        .comments-container {
-            width: 100%;
-            max-width: 600px;
-            background: rgba(20, 20, 20, 0.85);
-            padding: 30px;
+            gap: 40px;
+            height: 200px;
+            margin: 12px 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.3) 75%);
             border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            z-index: 20; /* 클릭 가능하도록 배경보다 위로 설정 */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 2px dashed rgba(250, 204, 21, 0.5);
+            position: relative;
+        }
+
+        .card {
+            width: 85px;
+            height: 120px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #ccc;
+            box-shadow: 2px 5px 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .card.playable {
+            cursor: pointer;
+            opacity: 1;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+        }
+        .card.playable:hover {
+            transform: translateY(-18px) scale(1.08);
+            border-color: #facc15;
+            box-shadow: 0 15px 25px rgba(250, 204, 21, 0.9);
+            z-index: 10;
+        }
+        
+        .card.red { color: #dc2626; }
+        .card.black { color: #111827; }
+        .card.purple { color: #9333ea; }
+        .card.hidden {
+            background: repeating-linear-gradient(45deg, #1e3a8a, #1e3a8a 10px, #1e40af 10px, #1e40af 20px);
+            color: transparent;
+            border: 2px solid #93c5fd;
+            cursor: default;
+            opacity: 1;
+        }
+        
+        .card-top { text-align: left; }
+        .card-center { text-align: center; font-size: 32px; }
+        .card-bottom { text-align: right; transform: rotate(180deg); }
+
+        /* --- 내가 조커 뽑을 때의 위로 솟구쳤다가 탁 내려꽂히는 연출 애니메이션 --- */
+        .joker-draw-slam {
+            animation: jokerSlamAnim 0.85s cubic-bezier(0.12, 1.15, 0.35, 1.25) forwards;
+            border: 3px solid #facc15 !important;
+            box-shadow: 0 0 30px #facc15, 0 12px 25px rgba(0,0,0,0.85) !important;
+            z-index: 50;
+        }
+        @keyframes jokerSlamAnim {
+            0% { transform: translateY(60px) scale(0.5) rotate(20deg); opacity: 0; }
+            45% { transform: translateY(-50px) scale(1.35) rotate(-8deg); opacity: 1; }
+            70% { transform: translateY(12px) scale(0.92) rotate(3deg); }
+            85% { transform: translateY(-6px) scale(1.03) rotate(-1deg); }
+            100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* --- 조커 궁극 슬로우 컷씬 (1.9배 느림) --- */
+        #cinematic-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.88);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        #cinematic-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .flying-giant-card {
+            width: 220px;
+            height: 320px;
+            background: white;
+            border-radius: 16px;
+            border: 4px solid #facc15;
+            box-shadow: 0 0 70px rgba(250, 204, 21, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            font-size: 40px;
+            font-weight: bold;
+            box-sizing: border-box;
+            position: relative;
+            animation: flyInFromDeckSlow 1.33s cubic-bezier(0.15, 0.85, 0.35, 1.15) forwards;
+        }
+        @keyframes flyInFromDeckSlow {
+            0% { transform: translateX(550px) translateY(-180px) rotate(60deg) scale(0.1); opacity: 0; }
+            100% { transform: translateX(0) translateY(0) rotate(0deg) scale(1.1); opacity: 1; }
+        }
+
+        .cinematic-title {
+            margin-top: 20px;
+            font-size: 34px;
+            font-weight: 900;
+            color: #facc15;
+            text-shadow: 0 0 20px #eab308, 2px 2px 4px #000;
+            animation: bounceTitle 0.6s infinite alternate;
+        }
+        @keyframes bounceTitle {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-8px); }
+        }
+
+        .table-wave-effect {
+            animation: tableCardsWaveSlow 1.33s ease-in-out;
+        }
+        @keyframes tableCardsWaveSlow {
+            0% { transform: translateY(0) scale(1); }
+            40% { transform: translateY(-45px) scale(1.18); filter: drop-shadow(0 30px 30px rgba(0,0,0,0.9)); }
+            80% { transform: translateY(15px) scale(0.95); }
+            100% { transform: translateY(0) scale(1); }
+        }
+
+        .deck-wrapper { cursor: pointer; transition: transform 0.2s; }
+        .deck-wrapper:hover { transform: scale(1.1); }
+        .deck-highlight .hidden {
+            animation: pulse-glow 1s infinite;
+            border-color: #facc15;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(250, 204, 21, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+        }
+
+        .message-box {
+            height: 35px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #4ade80;
+            margin: 10px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .floating-text {
+            position: absolute;
+            color: #facc15;
+            font-size: 30px;
+            font-weight: 900;
+            text-shadow: 0 0 10px #ca8a04, 2px 2px 0 #000;
+            pointer-events: none;
+            z-index: 100;
+            animation: floatUp 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(20px) scale(0.5); }
+            20% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+            80% { opacity: 1; transform: translateY(-30px) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1); }
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+            color: white;
+            border: 1px solid #60a5fa;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 5px;
+            display: none;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5);
+            transition: all 0.2s;
+        }
+        .action-btn:hover { background: linear-gradient(to bottom, #2563eb, #1e40af); transform: translateY(-2px); }
+        
+        .coin-anim {
+            position: absolute;
+            color: #facc15;
+            font-size: 24px;
+            font-weight: bold;
+            animation: floatCoin 1.5s forwards;
+            pointer-events: none;
+            z-index: 200;
+        }
+        @keyframes floatCoin {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
         }
     </style>
 </head>
 <body>
-    <div class="hint">CLICK TO INITIALIZE AUDIO | WASD OR ARROWS TO PLAY</div>
-    
-    <div class="console">
-        <div class="screen-frame">
-            <div class="screen-bezel">
-                <canvas id="gameCanvas"></canvas>
-                <div class="crt-overlay">
-                    <div class="scanlines"></div>
-                    <div class="flicker"></div>
-                    <div class="vignette"></div>
-                </div>
-                <div id="startPrompt" class="start-prompt">
-                    <p class="glitch-text">P R O J E C T</p>
-                    <h2 class="glitch-text" style="font-size: 24px; margin: 10px 0;">OUROBOROS</h2>
-                    <p style="margin-top: 40px; font-size: 12px; opacity: 0.8;">PRESS ANY KEY TO START</p>
-                </div>
-            </div>
-        </div>
 
-        <div class="controls">
-            <div class="d-pad">
-                <div class="d-pad-btn d-pad-up"></div>
-                <div class="d-pad-btn d-pad-down"></div>
-                <div class="d-pad-btn d-pad-left"></div>
-                <div class="d-pad-btn d-pad-right"></div>
-                <div class="d-pad-btn d-pad-center"></div>
+    <!-- 베팅 및 상점 모달 -->
+    <div id="betting-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2>🎲 라스베가스 카지노</h2>
+            <p style="font-size:13px; color:#94a3b8; margin:0;">최소 베팅 100 코인. 게임 전 버프를 구매해 승률을 높이세요!</p>
+            
+            <div class="shop-items">
+                <div class="shop-item" id="shop-item-1">
+                    <div class="shop-info">
+                        <div>🍀 행운의 잭팟 칩</div>
+                        <div>첫 손패에 조커/특수카드 확률 대폭 상승</div>
+                    </div>
+                    <button class="buy-btn" id="buy-btn-1" onclick="buyBuff(1, 150)">150 코인</button>
+                </div>
+                <div class="shop-item" id="shop-item-2">
+                    <div class="shop-info">
+                        <div>👁️ 딜러의 눈치</div>
+                        <div>덱에서 뽑을 때 유리한 카드 확률 상승</div>
+                    </div>
+                    <button class="buy-btn" id="buy-btn-2" onclick="buyBuff(2, 200)">200 코인</button>
+                </div>
             </div>
-            <div class="action-btns">
-                <div class="btn-a"></div>
+
+            <div class="bet-input-container">
+                <span style="font-size:20px;">🪙</span>
+                <input type="number" id="bet-input" value="100" min="100" step="50">
+            </div>
+            <div class="chip-presets">
+                <button class="chip-btn" onclick="addBet(100)">+100</button>
+                <button class="chip-btn" onclick="addBet(500)">+500</button>
+                <button class="chip-btn" onclick="addBet(1000)">+1000</button>
+                <button class="chip-btn" onclick="setMaxBet()">MAX</button>
+            </div>
+            <button class="main-action-btn" onclick="confirmBetAndStart()">딜 시작! 🃏</button>
+        </div>
+    </div>
+
+    <!-- 인게임 추가 베팅 모달 -->
+    <div id="in-game-bet-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h2>💰 판돈 키우기 (레이즈)</h2>
+            <p style="font-size:13px; color:#94a3b8; margin:0;">게임 도중 추가로 코인을 베팅해 승리 시 보상을 키우세요!</p>
+            <div class="bet-input-container">
+                <span style="font-size:20px;">🪙</span>
+                <input type="number" id="raise-input" value="100" min="50" step="50">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="main-action-btn" onclick="confirmRaise()">추가 베팅 완료!</button>
+                <button class="small-btn" style="flex:1;" onclick="closeInGameBetModal()">취소</button>
             </div>
         </div>
     </div>
 
-    <!-- 댓글 기능 영역 -->
-    <div class="comments-container">
-        <div id="disqus_thread"></div>
-        <script>
-            (function() { // DON'T EDIT BELOW THIS LINE
-            var d = document, s = d.createElement('script');
-            s.src = 'https://baemgeim.disqus.com/embed.js';
-            s.setAttribute('data-timestamp', +new Date());
-            (d.head || d.body).appendChild(s);
-            })();
-        </script>
-        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <!-- 조커 슬로우 시네마틱 컷씬 오버레이 -->
+    <div id="cinematic-overlay">
+        <div class="cinematic-title" id="cinematic-title-text">EFFECT CARD!</div>
+        <div id="cinematic-card-container" style="margin-top: 20px;"></div>
+    </div>
+
+    <h1>CASINO ONE CARD</h1>
+    
+    <div class="top-bar">
+        <div class="coin-display">💰 <span id="my-coins">1000</span> 코인</div>
+        <div class="bet-info-badge">현재 판 총 베팅: <span id="current-bet-display">100</span> 코인</div>
+        <div style="display: flex; gap: 8px;">
+            <button class="small-btn" style="background: linear-gradient(to bottom, #d97706, #b45309); border-color:#f59e0b;" onclick="openInGameBetModal()">💰 추가 베팅</button>
+            <button class="small-btn" onclick="openBettingModal()">🔄 포기</button>
+        </div>
+    </div>
+
+    <div class="game-board" id="gameBoard">
+        <div class="player-info" style="color: #f87171;">
+            <span>딜러 (AI) - 남은 카드: <span id="ai-count">7</span>장</span>
+        </div>
+        <div class="hand" id="ai-hand"></div>
+
+        <div class="center-table" id="centerTable">
+            <div id="deck-wrapper" class="deck-wrapper" onclick="drawCardPlayer()">
+                <div class="card hidden deck-pile"></div>
+                <div style="font-size: 12px; margin-top: 6px; font-weight: bold; color: #fde047; text-shadow: 0 1px 2px #000;">[ 덱 뽑기 ]</div>
+            </div>
+            
+            <div id="discard-pile" style="position: relative;"></div>
+        </div>
+
+        <div class="player-info" style="color: #60a5fa;">
+            <span>나의 턴 (K=한 번 더 / Q=방어 / JOKER=5장 공격)</span>
+            <span id="active-buffs-display" style="font-size:12px; color:#facc15;"></span>
+        </div>
+        <div class="hand" id="player-hand"></div>
+
+        <div class="message-box" id="message"></div>
+        <button id="restartBtn" class="action-btn" onclick="openBettingModal()">다음 판 베팅하러 가기</button>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startPrompt = document.getElementById('startPrompt');
+        const suits = ['♠', '♥', '♦', '♣'];
+        const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        
+        let deck = [];
+        let playerHand = [];
+        let aiHand = [];
+        let discardPile = [];
+        let isPlayerTurn = true;
+        let gameEnded = false;
+        
+        let myCoins = 1000;
+        let currentBet = 100;
+        const hitTexts = ["착!", "나이스!", "퍼펙트!", "받아라!", "쾅!"];
 
-        // Game Configuration
-        const GRID_SIZE = 20;
-        const TILE_COUNT = 15; // 15x15 grid (300x300 canvas internal)
-        canvas.width = 300;
-        canvas.height = 300;
+        let buff1Active = false; 
+        let buff2Active = false; 
 
-        let snake = [{ x: 7, y: 7 }];
-        let food = { x: 3, y: 3 };
-        let dx = 0;
-        let dy = 0;
-        let score = 0;
-        let gameLoop = null;
-        let isStarted = false;
-        let speed = 150;
-        let horrorLevel = 0;
-
-        // --- Audio Engine ---
-        let audioCtx = null;
-        let droneNode = null;
-        let gainNode = null;
-
-        function initAudio() {
-            if (audioCtx) return;
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // Background Drone
-            droneNode = audioCtx.createOscillator();
-            droneNode.type = 'sawtooth';
-            droneNode.frequency.setValueAtTime(40, audioCtx.currentTime); // Low growl
-            
-            const lowPass = audioCtx.createBiquadFilter();
-            lowPass.type = 'lowpass';
-            lowPass.frequency.setValueAtTime(100, audioCtx.currentTime);
-            
-            gainNode = audioCtx.createGain();
-            gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            
-            droneNode.connect(lowPass);
-            lowPass.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            droneNode.start();
-        }
-
-        function playBeep(freq, type = 'sine', duration = 0.1, vol = 0.1) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const g = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            g.gain.setValueAtTime(vol, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-            osc.connect(g);
-            g.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
-        }
-
-        // --- Glitch Manager ---
-        function updateHorror() {
-            horrorLevel = Math.floor(score / 5);
-            if (gainNode) {
-                gainNode.gain.setTargetAtTime(0.05 + (horrorLevel * 0.01), audioCtx.currentTime, 0.5);
-            }
-            
-            if (score > 10 && Math.random() < 0.05) {
-                triggerGlitch();
+        function updateCoinDisplay(amountChange = 0) {
+            const coinEl = document.getElementById('my-coins');
+            coinEl.innerText = myCoins;
+            if(amountChange !== 0) {
+                const animEl = document.createElement('div');
+                animEl.className = 'coin-anim';
+                animEl.innerText = amountChange > 0 ? `+${amountChange}` : `${amountChange}`;
+                animEl.style.color = amountChange > 0 ? '#4ade80' : '#f87171';
+                animEl.style.left = '120px';
+                animEl.style.top = '35px';
+                document.body.appendChild(animEl);
+                setTimeout(() => animEl.remove(), 1500);
             }
         }
 
-        function triggerGlitch() {
-            canvas.style.transform = `translate(${Math.random()*4-2}px, ${Math.random()*4-2}px) scale(${1 + Math.random()*0.02})`;
-            setTimeout(() => canvas.style.transform = 'none', 50);
-            playBeep(Math.random() * 200 + 50, 'square', 0.05, 0.02);
+        function openBettingModal() {
+            document.getElementById('bet-input').value = 100;
+            buff1Active = false;
+            buff2Active = false;
+            document.getElementById('shop-item-1').classList.remove('purchased');
+            document.getElementById('shop-item-2').classList.remove('purchased');
+            document.getElementById('buy-btn-1').disabled = false;
+            document.getElementById('buy-btn-1').innerText = "150 코인";
+            document.getElementById('buy-btn-2').disabled = false;
+            document.getElementById('buy-btn-2').innerText = "200 코인";
+            document.getElementById('betting-modal').style.display = 'flex';
         }
 
-        // --- Game Logic ---
-        function draw() {
-            // Clear Screen (CRT style)
-            ctx.fillStyle = '#1a1c1a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw Food
-            ctx.fillStyle = horrorLevel > 4 ? '#ff0000' : '#33ff33';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = ctx.fillStyle;
-            
-            if (horrorLevel > 6 && Math.random() < 0.1) {
-                // Ghost food
-                ctx.globalAlpha = 0.3;
-            }
-            ctx.fillRect(food.x * GRID_SIZE + 2, food.y * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4);
-            ctx.globalAlpha = 1.0;
-
-            // Draw Snake
-            snake.forEach((part, index) => {
-                let color = '#33ff33';
-                if (horrorLevel > 3 && index % 3 === 0) color = '#22cc22';
-                if (horrorLevel > 8) color = `rgb(${Math.random()*100}, ${150 + Math.random()*105}, ${Math.random()*100})`;
-                
-                ctx.fillStyle = color;
-                ctx.shadowBlur = 5;
-                ctx.shadowColor = color;
-                
-                // As the game gets creepier, the snake might jitter
-                const jitterX = horrorLevel > 5 ? Math.random() * 2 - 1 : 0;
-                const jitterY = horrorLevel > 5 ? Math.random() * 2 - 1 : 0;
-                
-                ctx.fillRect(part.x * GRID_SIZE + 1 + jitterX, part.y * GRID_SIZE + 1 + jitterY, GRID_SIZE - 2, GRID_SIZE - 2);
-            });
-
-            // UI (Score)
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = 'rgba(51, 255, 51, 0.5)';
-            ctx.font = '10px Courier New';
-            let scoreLabel = `DATA_VAL: ${score.toString().padStart(3, '0')}`;
-            if (horrorLevel > 7 && Math.random() < 0.05) scoreLabel = "HE_IS_HERE";
-            ctx.fillText(scoreLabel, 10, 20);
-        }
-
-        function move() {
-            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-            
-            // Wall Collision
-            if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
-                gameOver();
+        function buyBuff(id, cost) {
+            if (myCoins < cost) {
+                alert("코인이 부족합니다!");
                 return;
             }
-
-            // Self Collision
-            if (snake.some((part, index) => index !== 0 && part.x === head.x && part.y === head.y)) {
-                gameOver();
-                return;
-            }
-
-            snake.unshift(head);
-
-            if (head.x === food.x && head.y === food.y) {
-                score++;
-                playBeep(200 + score * 10, 'sine', 0.1, 0.15);
-                updateHorror();
-                placeFood();
-                speed = Math.max(70, 150 - score * 2);
-                clearInterval(gameLoop);
-                gameLoop = setInterval(step, speed);
+            myCoins -= cost;
+            updateCoinDisplay(-cost);
+            if (id === 1) {
+                buff1Active = true;
+                document.getElementById('shop-item-1').classList.add('purchased');
+                document.getElementById('buy-btn-1').disabled = true;
+                document.getElementById('buy-btn-1').innerText = "적용됨";
             } else {
-                snake.pop();
+                buff2Active = true;
+                document.getElementById('shop-item-2').classList.add('purchased');
+                document.getElementById('buy-btn-2').disabled = true;
+                document.getElementById('buy-btn-2').innerText = "적용됨";
             }
         }
 
-        function placeFood() {
-            food = {
-                x: Math.floor(Math.random() * TILE_COUNT),
-                y: Math.floor(Math.random() * TILE_COUNT)
-            };
-            // Don't place food on snake
-            if (snake.some(part => part.x === food.x && part.y === food.y)) {
-                placeFood();
+        function addBet(amount) {
+            const input = document.getElementById('bet-input');
+            let val = parseInt(input.value) || 100;
+            val += amount;
+            if (val > myCoins) val = myCoins;
+            input.value = val;
+        }
+
+        function setMaxBet() {
+            document.getElementById('bet-input').value = myCoins;
+        }
+
+        function confirmBetAndStart() {
+            const inputVal = parseInt(document.getElementById('bet-input').value);
+            if (isNaN(inputVal) || inputVal < 100) {
+                alert("최소 베팅 금액은 100 코인입니다!");
+                return;
             }
-        }
-
-        function step() {
-            if (dx === 0 && dy === 0) return;
-            move();
-            draw();
-        }
-
-        function gameOver() {
-            clearInterval(gameLoop);
-            isStarted = false;
-            playBeep(50, 'sawtooth', 0.5, 0.3);
-            
-            startPrompt.style.display = 'block';
-            startPrompt.innerHTML = `
-                <p class="glitch-text" style="color: #ff3333;">CONNECTION LOST</p>
-                <h2 style="font-size: 20px; margin: 10px 0; color: #ff3333;">SYSTEM FAILURE</h2>
-                <p style="margin-top: 40px; font-size: 10px; opacity: 0.6;">FINAL_SCORE: ${score}</p>
-                <p style="margin-top: 10px; font-size: 10px; opacity: 0.8;">PRESS ANY KEY TO REBOOT</p>
-            `;
-            
-            // Final Scare
-            if (horrorLevel > 5) {
-                document.body.style.backgroundColor = '#100';
-                setTimeout(() => document.body.style.backgroundColor = 'var(--bg-color)', 200);
-            }
-        }
-
-        function resetGame() {
-            snake = [{ x: 7, y: 7 }];
-            dx = 0; dy = 0; score = 0; horrorLevel = 0;
-            speed = 150;
-            placeFood();
-            startPrompt.style.display = 'none';
-            isStarted = true;
-            clearInterval(gameLoop);
-            gameLoop = setInterval(step, speed);
-            draw();
-        }
-
-        // --- Input Handling ---
-        window.addEventListener('keydown', e => {
-            // 스크롤 등의 기본 동작을 방지하려면 화살표 키와 스페이스바의 기본 동작을 막을 수 있습니다.
-            if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.code) > -1) {
-                e.preventDefault();
-            }
-
-            initAudio(); // Initialize audio on first interaction
-            
-            if (!isStarted) {
-                resetGame();
+            if (inputVal > myCoins) {
+                alert("소유한 코인보다 많이 베팅할 수 없습니다!");
                 return;
             }
 
-            const key = e.key.toLowerCase();
-            
-            if ((key === 'w' || key === 'arrowup') && dy === 0) { dx = 0; dy = -1; }
-            if ((key === 's' || key === 'arrowdown') && dy === 0) { dx = 0; dy = 1; }
-            if ((key === 'a' || key === 'arrowleft') && dx === 0) { dx = -1; dy = 0; }
-            if ((key === 'd' || key === 'arrowright') && dx === 0) { dx = 1; dy = 0; }
-            
-            playBeep(100, 'triangle', 0.02, 0.05);
-        });
+            currentBet = inputVal;
+            myCoins -= currentBet;
+            updateCoinDisplay(-currentBet);
+            document.getElementById('current-bet-display').innerText = currentBet;
+            document.getElementById('betting-modal').style.display = 'none';
 
-        // Initial Draw
-        draw();
+            updateBuffDisplay();
+            initGame();
+        }
+
+        function updateBuffDisplay() {
+            let txt = [];
+            if(buff1Active) txt.push("🍀잭팟UP");
+            if(buff2Active) txt.push("👁️눈치UP");
+            document.getElementById('active-buffs-display').innerText = txt.join(" ");
+        }
+
+        function openInGameBetModal() {
+            if(gameEnded) {
+                alert("게임이 이미 종료되었습니다!");
+                return;
+            }
+            document.getElementById('raise-input').value = 100;
+            document.getElementById('in-game-bet-modal').style.display = 'flex';
+        }
+
+        function closeInGameBetModal() {
+            document.getElementById('in-game-bet-modal').style.display = 'none';
+        }
+
+        function confirmRaise() {
+            const raiseVal = parseInt(document.getElementById('raise-input').value);
+            if(isNaN(raiseVal) || raiseVal <= 0) {
+                alert("올바른 베팅 금액을 입력하세요!");
+                return;
+            }
+            if(raiseVal > myCoins) {
+                alert("소유한 코인보다 많이 베팅할 수 없습니다!");
+                return;
+            }
+
+            myCoins -= raiseVal;
+            currentBet += raiseVal;
+            updateCoinDisplay(-raiseVal);
+            document.getElementById('current-bet-display').innerText = currentBet;
+            closeInGameBetModal();
+            logMsg(`💰 추가 베팅 ${raiseVal} 코인 완료! 총 판돈: ${currentBet} 코인`, "#facc15");
+        }
+
+        function createDeck() {
+            deck = [];
+            for (let suit of suits) {
+                for (let value of values) {
+                    let color = (suit === '♥' || suit === '♦') ? 'red' : 'black';
+                    deck.push({ suit, value, color });
+                }
+            }
+            deck.push({ suit: '🃏', value: 'JOKER', color: 'purple', name: '컬러 조커' });
+            deck.push({ suit: '🏴', value: 'JOKER', color: 'black', name: '흑백 조커' });
+
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            if (buff1Active) {
+                for(let i=0; i<deck.length; i++) {
+                    if(deck[i].value === 'JOKER' || deck[i].value === 'K' || deck[i].value === 'Q') {
+                        let temp = deck[i];
+                        deck.splice(i, 1);
+                        deck.push(temp);
+                    }
+                }
+            }
+        }
+
+        function checkValid(card, topCard) {
+            if (card.value === 'JOKER' || topCard.value === 'JOKER') return true;
+            return card.suit === topCard.suit || card.value === topCard.value;
+        }
+
+        function createCardHTML(card, isHidden = false, index = -1, isPlayer = false, isJokerJustDrawn = false) {
+            if (isHidden) return `<div class="card hidden"></div>`;
+            
+            const topCard = discardPile[discardPile.length - 1];
+            let isPlayable = false;
+            
+            if (isPlayer && isPlayerTurn && !gameEnded) {
+                isPlayable = checkValid(card, topCard);
+            }
+
+            const playableClass = isPlayable ? "playable" : "";
+            const jokerSlamClass = isJokerJustDrawn ? "joker-draw-slam" : "";
+            let clickEvent = isPlayer ? (isPlayable ? `onclick="playCard(${index})"` : `onclick="wrongCardClick()"`) : "";
+
+            if (card.value === 'JOKER') {
+                return `
+                    <div class="card ${card.color} ${playableClass} ${jokerSlamClass}" ${clickEvent}>
+                        <div class="card-top" style="font-size:11px;">${card.name || 'JOKER'}</div>
+                        <div class="card-center" style="font-size:36px;">${card.suit}</div>
+                        <div class="card-bottom" style="font-size:11px;">${card.name || 'JOKER'}</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="card ${card.color} ${playableClass}" ${clickEvent}>
+                    <div class="card-top">${card.value} ${card.suit}</div>
+                    <div class="card-center">${card.suit}</div>
+                    <div class="card-bottom">${card.value} ${card.suit}</div>
+                </div>
+            `;
+        }
+
+        let newlyDrawnPlayerIndex = -1;
+
+        function render() {
+            document.getElementById('ai-count').innerText = aiHand.length;
+            document.getElementById('ai-hand').innerHTML = aiHand.map(() => createCardHTML(null, true)).join('');
+            
+            document.getElementById('player-hand').innerHTML = playerHand.map((card, i) => {
+                let isJustDrawn = (i === newlyDrawnPlayerIndex);
+                return createCardHTML(card, false, i, true, isJustDrawn);
+            }).join('');
+
+            const discardDiv = document.getElementById('discard-pile');
+            if (discardPile.length > 0) {
+                const topCard = discardPile[discardPile.length - 1];
+                discardDiv.innerHTML = createCardHTML(topCard) + `<div style="font-size: 12px; margin-top: 6px; font-weight: bold; color: #f87171; text-shadow:0 1px 2px #000;">[ 바닥 카드 ]</div>`;
+            }
+            checkNeedToDraw();
+        }
+
+        function checkNeedToDraw() {
+            if (!isPlayerTurn || gameEnded) {
+                document.getElementById('deck-wrapper').classList.remove('deck-highlight');
+                return;
+            }
+            const topCard = discardPile[discardPile.length - 1];
+            const hasPlayable = playerHand.some(card => checkValid(card, topCard));
+            
+            if (!hasPlayable) {
+                document.getElementById('deck-wrapper').classList.add('deck-highlight');
+                logMsg("낼 카드가 없군. 덱을 클릭해서 카드를 뽑아라.", "#facc15");
+            } else {
+                document.getElementById('deck-wrapper').classList.remove('deck-highlight');
+            }
+        }
+
+        function wrongCardClick() {
+            if(!isPlayerTurn) return;
+            logMsg("모양이나 숫자가 같아야 낼 수 있어!", "#f87171");
+        }
+
+        function logMsg(msg, color="#4ade80") {
+            const msgBox = document.getElementById('message');
+            msgBox.innerText = msg;
+            msgBox.style.color = color;
+        }
+
+        function triggerImpactEffect() {
+            const board = document.getElementById('gameBoard');
+            board.classList.remove('shake');
+            void board.offsetWidth;
+            board.classList.add('shake');
+
+            const container = document.getElementById('centerTable');
+            const textEl = document.createElement('div');
+            textEl.className = 'floating-text';
+            textEl.innerText = hitTexts[Math.floor(Math.random() * hitTexts.length)];
+            const offsetX = (Math.random() - 0.5) * 100;
+            textEl.style.left = `calc(50% + ${offsetX}px)`;
+            textEl.style.top = '20%';
+            container.appendChild(textEl);
+            setTimeout(() => textEl.remove(), 1000);
+        }
+
+        function triggerJokerCinematic(card, titleText, callback) {
+            const overlay = document.getElementById('cinematic-overlay');
+            const cardContainer = document.getElementById('cinematic-card-container');
+            const titleEl = document.getElementById('cinematic-title-text');
+            const playerHandEl = document.getElementById('player-hand');
+            const centerTableEl = document.getElementById('centerTable');
+
+            titleEl.innerText = titleText;
+
+            let cardInnerHtml = `
+                <div class="card ${card.color}" style="width:100%; height:100%; font-size:30px;">
+                    <div class="card-top" style="font-size:11px;">${card.name}</div>
+                    <div class="card-center" style="font-size:70px;">${card.suit}</div>
+                    <div class="card-bottom" style="font-size:11px;">${card.name}</div>
+                </div>
+            `;
+
+            cardContainer.innerHTML = `<div class="flying-giant-card">${cardInnerHtml}</div>`;
+            overlay.classList.add('active');
+            playerHandEl.classList.add('hand-wave');
+            centerTableEl.classList.add('table-wave-effect');
+
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                playerHandEl.classList.remove('hand-wave');
+                centerTableEl.classList.remove('table-wave-effect');
+                if (callback) callback();
+            }, 2400);
+        }
+
+        function triggerNormalCinematic(card, titleText, callback) {
+            const overlay = document.getElementById('cinematic-overlay');
+            const cardContainer = document.getElementById('cinematic-card-container');
+            const titleEl = document.getElementById('cinematic-title-text');
+
+            titleEl.innerText = titleText;
+            let cardInnerHtml = `
+                <div class="card ${card.color}" style="width:100%; height:100%; font-size:30px;">
+                    <div class="card-top">${card.value} ${card.suit}</div>
+                    <div class="card-center" style="font-size:75px;">${card.suit}</div>
+                    <div class="card-bottom">${card.value} ${card.suit}</div>
+                </div>
+            `;
+
+            cardContainer.innerHTML = `<div style="width:220px; height:320px; background:white; border-radius:16px; border:4px solid #facc15; box-shadow:0 0 50px rgba(250,204,21,0.8); display:flex; flex-direction:column; justify-content:space-between; padding:20px; box-sizing:border-box; animation:popCardCinematic 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">${cardInnerHtml}</div>`;
+            overlay.classList.add('active');
+
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                if (callback) callback();
+            }, 1200);
+        }
+
+        function animateDraw(isPlayerTarget, callback) {
+            const deckEl = document.getElementById('deck-wrapper');
+            const targetEl = isPlayerTarget ? document.getElementById('player-hand') : document.getElementById('ai-hand');
+            
+            if (!deckEl || !targetEl) { if(callback) callback(); return; }
+
+            const deckRect = deckEl.getBoundingClientRect();
+            const targetRect = targetEl.getBoundingClientRect();
+
+            const movingCard = document.createElement('div');
+            movingCard.className = 'card hidden';
+            movingCard.style.position = 'fixed';
+            movingCard.style.left = deckRect.left + 'px';
+            movingCard.style.top = deckRect.top + 'px';
+            movingCard.style.zIndex = '9999';
+            movingCard.style.margin = '0';
+            movingCard.style.transition = 'transform 0.4s ease-in-out, opacity 0.4s ease-in-out';
+            document.body.appendChild(movingCard);
+
+            void movingCard.offsetWidth;
+
+            const tx = targetRect.left + (targetRect.width / 2) - (deckRect.width / 2) - deckRect.left;
+            const ty = targetRect.top + (targetRect.height / 2) - (deckRect.height / 2) - deckRect.top;
+
+            movingCard.style.transform = `translate(${tx}px, ${ty}px) scale(0.6)`;
+            movingCard.style.opacity = '0.3';
+
+            setTimeout(() => {
+                movingCard.remove();
+                if (deck.length === 0) recycleDeck();
+                if (deck.length > 0) {
+                    if (isPlayerTarget && buff2Active) {
+                        const topCard = discardPile[discardPile.length - 1];
+                        for(let i=0; i<deck.length; i++) {
+                            if(checkValid(deck[i], topCard)) {
+                                let validCard = deck.splice(i, 1)[0];
+                                deck.push(validCard);
+                                break;
+                            }
+                        }
+                    }
+
+                    const drawn = deck.pop();
+                    
+                    if (isPlayerTarget) {
+                        playerHand.push(drawn);
+                        newlyDrawnPlayerIndex = playerHand.length - 1;
+                        
+                        if (drawn.value === 'JOKER') {
+                            logMsg(`⚡ 대박! ${drawn.name} 카드를 뽑았다!`, "#facc15");
+                        }
+                    } else {
+                        aiHand.push(drawn);
+                    }
+                    
+                    render();
+
+                    if (isPlayerTarget) {
+                        setTimeout(() => {
+                            newlyDrawnPlayerIndex = -1;
+                        }, 900);
+                    }
+                }
+                if (callback) callback();
+            }, 400);
+        }
+
+        function drawMultipleCards(isPlayerTarget, count, callback) {
+            if (count <= 0) {
+                if (callback) callback();
+                return;
+            }
+            animateDraw(isPlayerTarget, () => {
+                drawMultipleCards(isPlayerTarget, count - 1, callback);
+            });
+        }
+
+        function playCard(index) {
+            newlyDrawnPlayerIndex = -1;
+            if (!isPlayerTurn || gameEnded) return;
+            const playedCard = playerHand.splice(index, 1)[0];
+            discardPile.push(playedCard);
+            triggerImpactEffect();
+            render();
+
+            if (checkWin()) return;
+
+            if (playedCard.value === 'K') {
+                triggerNormalCinematic(playedCard, "👑 KING : ONE MORE TURN!", () => {
+                    logMsg("👑 킹 발동! 한 번 더 냅니다!", "#facc15");
+                    render();
+                });
+            } else if (playedCard.value === 'Q') {
+                triggerNormalCinematic(playedCard, "👑 QUEEN : DEFENSE & TURN!", () => {
+                    logMsg("👑 퀸 발동! 방어 성공!", "#facc15");
+                    render();
+                });
+            } else if (playedCard.value === 'JOKER') {
+                const jokerTitle = playedCard.name === '컬러 조커' ? "🃏 COLOR JOKER : 5 CARDS ATTACK!" : "🏴 BLACK JOKER : 5 CARDS ATTACK!";
+                triggerJokerCinematic(playedCard, jokerTitle, () => {
+                    logMsg(`🃏 ${playedCard.name} 발동! 딜러가 5장을 먹습니다!`, "#9333ea");
+                    isPlayerTurn = false;
+                    drawMultipleCards(false, 5, () => {
+                        logMsg("딜러가 카드를 5장 먹었습니다. 내 턴!", "#4ade80");
+                        isPlayerTurn = true;
+                        render();
+                    });
+                });
+            } else {
+                isPlayerTurn = false;
+                logMsg("딜러가 카드를 고민 중...", "#9ca3af");
+                setTimeout(aiTurn, 1000);
+            }
+        }
+
+        function drawCardPlayer() {
+            if (!isPlayerTurn || gameEnded) return;
+            isPlayerTurn = false;
+            document.getElementById('deck-wrapper').classList.remove('deck-highlight');
+            
+            animateDraw(true, () => {
+                logMsg("카드를 1장 뽑았습니다. 딜러의 턴입니다.");
+                setTimeout(aiTurn, 800);
+            });
+        }
+
+        function aiTurn() {
+            if (gameEnded) return;
+            const topCard = discardPile[discardPile.length - 1];
+            let playableIndex = -1;
+
+            for (let i = 0; i < aiHand.length; i++) {
+                if (checkValid(aiHand[i], topCard)) { playableIndex = i; break; }
+            }
+
+            if (playableIndex !== -1) {
+                const playedCard = aiHand.splice(playableIndex, 1)[0];
+                discardPile.push(playedCard);
+                triggerImpactEffect();
+                render();
+
+                if (checkWin()) return;
+
+                if (playedCard.value === 'K') {
+                    triggerNormalCinematic(playedCard, "👑 DEALER KING!", () => {
+                        logMsg(`딜러가 킹(K)을 냈다! 딜러 연속 턴!`, "#f87171");
+                        setTimeout(aiTurn, 1200);
+                    });
+                } else if (playedCard.value === 'Q') {
+                    triggerNormalCinematic(playedCard, "👑 DEALER QUEEN!", () => {
+                        logMsg(`딜러가 퀸(Q)을 냈다!`, "#f87171");
+                        setTimeout(aiTurn, 1200);
+                    });
+                } else if (playedCard.value === 'JOKER') {
+                    triggerJokerCinematic(playedCard, `🃏 DEALER ${playedCard.name.toUpperCase()} ATTACK!`, () => {
+                        logMsg(`딜러가 ${playedCard.name}를 냈다! 당신이 5장을 먹습니다!`, "#f87171");
+                        drawMultipleCards(true, 5, () => {
+                            isPlayerTurn = true;
+                            logMsg("카드를 5장 먹었습니다... 내 턴입니다.", "#60a5fa");
+                            render();
+                        });
+                    });
+                } else {
+                    logMsg(`딜러가 카드를 냈다! 반격해라!`);
+                    isPlayerTurn = true;
+                    render();
+                }
+            } else {
+                animateDraw(false, () => {
+                    logMsg("딜러가 낼 카드가 없어 뽑았다. 기회다!");
+                    if (!checkWin()) {
+                        isPlayerTurn = true;
+                        render();
+                    }
+                });
+            }
+        }
+
+        function checkWin() {
+            let winnings = currentBet * 2;
+            if (playerHand.length === 0) {
+                logMsg(`🎉 승리! ${winnings} 코인을 획득했다!`, "#facc15");
+                myCoins += winnings;
+                updateCoinDisplay(winnings);
+                endGameRoutine();
+                return true;
+            }
+            if (aiHand.length === 0) {
+                logMsg(`💀 패배... 총 베팅한 ${currentBet} 코인을 날렸다.`, "#f87171");
+                endGameRoutine();
+                return true;
+            }
+            return false;
+        }
+        
+        function endGameRoutine() {
+            gameEnded = true;
+            document.getElementById('restartBtn').style.display = "inline-block";
+            document.getElementById('deck-wrapper').classList.remove('deck-highlight');
+        }
+
+        function recycleDeck() {
+            if (discardPile.length <= 1) return;
+            const topCard = discardPile.pop();
+            deck = [...discardPile];
+            discardPile = [topCard];
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function initGame() {
+            if(myCoins < 100) {
+                alert("전재산을 잃고 파산했습니다! 카지노 지배인이 특별 구호금 1000 코인을 지원합니다.");
+                myCoins = 1000;
+                updateCoinDisplay(1000);
+            }
+
+            createDeck();
+            discardPile = [];
+            playerHand = [];
+            aiHand = [];
+            gameEnded = false;
+            isPlayerTurn = true;
+            newlyDrawnPlayerIndex = -1;
+            document.getElementById('restartBtn').style.display = "none";
+
+            for (let i=0; i<7; i++) {
+                playerHand.push(deck.pop());
+                aiHand.push(deck.pop());
+            }
+            discardPile.push(deck.pop());
+            
+            logMsg("라운드 시작! 카드를 확인해라.", "#60a5fa");
+            render();
+        }
+
+        window.onload = () => {
+            updateCoinDisplay(0);
+            openBettingModal();
+        };
     </script>
 </body>
 </html>
