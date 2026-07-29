@@ -2,82 +2,1679 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>상상(相想) 테스트: 나는 강아지상? 고양이상?</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>웹 포켓로그 (Mega Evolution Fix v2)</title>
+    <!-- 레트로 둥근모 폰트 CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/dungne/dunggeunmo-font/dunggeunmo.css">
+    <style>
+        :root {
+            --bg-color: #181820;
+            --panel-bg: #22222c;
+            --accent-color: #f8b000;
+            --text-color: #f8f8f8;
+            --text-muted: #a0a0a0;
+            --gba-box-bg: #f8f8f8;
+            --gba-box-border: #404040;
+            --gba-red: #e03828;
+            --mega-color: #a855f7;
+            --gmax-color: #ef4444;
+            --form-color: #0ea5e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            image-rendering: pixelated;
+            font-family: 'DungGeunMo', monospace, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: manipulation;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: var(--panel-bg);
+            border-radius: 10px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.9);
+            overflow: hidden;
+            border: 4px solid #484850;
+            position: relative;
+        }
+
+        header {
+            background: linear-gradient(180deg, #3068b0, #184080);
+            padding: 12px;
+            text-align: center;
+            border-bottom: 4px solid var(--accent-color);
+        }
+
+        header h1 {
+            margin: 0;
+            color: #ffffff;
+            text-shadow: 2px 2px 0px #000;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+        }
+
+        .screen {
+            padding: 15px;
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        button {
+            font-family: 'DungGeunMo', monospace;
+            background-color: #f8f8f8;
+            color: #202020;
+            border: 3px solid #404040;
+            padding: 12px 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 4px;
+            user-select: none;
+            box-shadow: inset -2px -2px 0px #888, inset 2px 2px 0px #fff;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: inset -1px -1px 0px #888;
+        }
+
+        button:disabled {
+            background-color: #707070;
+            color: #a0a0a0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .stats-panel {
+            display: flex;
+            justify-content: space-between;
+            background: #101018;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            border-bottom: 2px solid #404040;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .stats-panel span {
+            background: #202030;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #505060;
+        }
+
+        /* 배틀 아레나 */
+        .battle-arena {
+            position: relative;
+            height: 270px;
+            background: linear-gradient(180deg, #70b870 0%, #408840 70%, #306030 100%);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 4px solid #204020;
+            overflow: hidden;
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.6);
+            transition: background 0.5s ease;
+        }
+
+        .battle-arena.boss-bg {
+            background: linear-gradient(180deg, #b84040 0%, #702020 70%, #301010 100%);
+            border-color: #601010;
+        }
+
+        .platform-enemy {
+            position: absolute;
+            top: 55px;
+            right: 30px;
+            width: 160px;
+            height: 40px;
+            background: #78a860;
+            border-radius: 50%;
+            border: 3px solid #386028;
+        }
+
+        .platform-player {
+            position: absolute;
+            bottom: 12px;
+            left: 30px;
+            width: 190px;
+            height: 45px;
+            background: #90c070;
+            border-radius: 50%;
+            border: 3px solid #487830;
+        }
+
+        .battler-enemy-wrap {
+            position: absolute;
+            top: 15px;
+            right: 55px;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .battler-player-wrap {
+            position: absolute;
+            bottom: 20px;
+            left: 60px;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .poke-status-box {
+            position: absolute;
+            background: #f8f8d8;
+            border: 3px solid #404040;
+            border-radius: 6px;
+            padding: 5px 10px;
+            color: #202020;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+            width: 200px;
+            z-index: 3;
+        }
+
+        .status-enemy { top: 10px; left: 15px; }
+        .status-player { bottom: 15px; right: 15px; }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 3px;
+        }
+
+        .poke-img-container {
+            height: 100px;
+            width: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin: 0 auto;
+        }
+
+        .poke-img {
+            max-height: 100px;
+            max-width: 100px;
+            image-rendering: pixelated;
+            filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.3));
+            animation: idleBreathing 2.2s ease-in-out infinite alternate;
+        }
+
+        .mega-mode .poke-img {
+            transform: scale(1.15);
+            filter: drop-shadow(0px 0px 16px var(--mega-color));
+            animation: megaGlowPulse 1.2s ease-in-out infinite alternate !important;
+        }
+
+        .form-mode .poke-img {
+            transform: scale(1.2);
+            filter: drop-shadow(0px 0px 16px var(--form-color));
+            animation: formFloat 1.5s ease-in-out infinite alternate !important;
+        }
+
+        .fusion-mode .poke-img {
+            transform: scale(1.2);
+            filter: drop-shadow(0px 0px 16px #22d3ee);
+            animation: formFloat 1.5s ease-in-out infinite alternate !important;
+        }
+
+        @keyframes megaGlowPulse {
+            0% { transform: translateY(0) scale(1.12); filter: drop-shadow(0px 0px 10px var(--mega-color)); }
+            100% { transform: translateY(-4px) scale(1.18); filter: drop-shadow(0px 0px 22px var(--mega-color)) drop-shadow(0px 0px 6px #fff); }
+        }
+
+        @keyframes formFloat {
+            0% { transform: translateY(0) scale(1.18); }
+            100% { transform: translateY(-5px) scale(1.22); }
+        }
+
+        @keyframes idleBreathing {
+            0% { transform: translateY(0) scaleY(1); }
+            50% { transform: translateY(-3px) scaleY(1.04) scaleX(0.98); }
+            100% { transform: translateY(0) scaleY(1); }
+        }
+
+        .transform-flash { animation: screenFlash 0.6s ease-out; }
+        @keyframes screenFlash {
+            0% { filter: brightness(3) contrast(1.5); }
+            100% { filter: none; }
+        }
+
+        /* 레벨업 팝업 */
+        .levelup-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.78);
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .levelup-box {
+            background: var(--gba-box-bg);
+            border: 4px double var(--gba-box-border);
+            outline: 3px solid #f88800;
+            border-radius: 8px;
+            padding: 16px 20px;
+            width: 260px;
+            max-width: 80%;
+            text-align: center;
+            color: #202020;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.6);
+        }
+
+        .levelup-box img {
+            height: 70px;
+            image-rendering: pixelated;
+            filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.3));
+        }
+
+        .levelup-box.levelup-pop {
+            animation: levelUpPopIn 0.4s cubic-bezier(.34,1.56,.64,1);
+        }
+
+        @keyframes levelUpPopIn {
+            0% { transform: scale(0.4); opacity: 0; }
+            70% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .levelup-stat-box {
+            text-align: left;
+            font-size: 0.85rem;
+            background: #fff;
+            border: 2px solid #a0a0a0;
+            border-radius: 4px;
+            padding: 6px 10px;
+            line-height: 1.6;
+        }
+
+        .levelup-stat-box .stat-arrow { color: #00a86b; font-weight: bold; }
+
+        .anim-attack-player { animation: attackLungePlayer 0.35s ease-in-out !important; }
+        @keyframes attackLungePlayer {
+            0% { transform: translate(0, 0); }
+            40% { transform: translate(40px, -25px) scale(1.1); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .anim-attack-enemy { animation: attackLungeEnemy 0.35s ease-in-out !important; }
+        @keyframes attackLungeEnemy {
+            0% { transform: translate(0, 0); }
+            40% { transform: translate(-40px, 25px) scale(1.1); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .anim-hit { animation: hitImpact 0.45s ease-in-out !important; }
+        @keyframes hitImpact {
+            0% { opacity: 1; filter: none; }
+            20% { opacity: 0.2; filter: brightness(2) sepia(1) hue-rotate(-50deg) saturate(5); transform: translateX(-6px); }
+            40% { opacity: 1; transform: translateX(6px); }
+            100% { opacity: 1; filter: none; transform: translateX(0); }
+        }
+
+        .hp-bar-container {
+            background: #404040;
+            border-radius: 4px;
+            height: 10px;
+            width: 100%;
+            overflow: hidden;
+            border: 1px solid #101010;
+        }
+
+        .hp-bar {
+            height: 100%;
+            width: 100%;
+            transition: width 0.4s ease-out, background-color 0.4s ease;
+        }
+        .hp-high { background-color: #00c853; }
+        .hp-medium { background-color: #ffab00; }
+        .hp-low { background-color: #d50000; }
+
+        #battle-log {
+            background: var(--gba-box-bg);
+            border: 4px double var(--gba-box-border);
+            outline: 3px solid #f88800;
+            height: 95px;
+            overflow-y: auto;
+            padding: 8px 12px;
+            font-size: 0.95rem;
+            color: #202020;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        #battle-log div {
+            border-bottom: 1px dotted #a0a0a0;
+            padding-bottom: 2px;
+            margin-bottom: 2px;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .starter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 8px;
+            margin-top: 10px;
+            background: #181820;
+            border-radius: 6px;
+        }
+
+        .card {
+            background: #282830;
+            border: 2px solid #484850;
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .card.selected {
+            border-color: #00c853;
+            background: #183020;
+        }
+
+        .cost-badge {
+            background: var(--gba-red);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+        }
+
+        .legendary-badge {
+            background: #8e44ad;
+            color: #fff;
+            font-size: 0.65rem;
+            padding: 1px 3px;
+            border-radius: 3px;
+            margin-top: 2px;
+            display: inline-block;
+        }
+
+        .btn-atk { background-color: #e03828; color: white; }
+        .btn-catch { background-color: #f878a8; color: #111; }
+        .btn-party { background-color: #2880ca; color: white; }
+        .btn-special { background-color: #8e44ad; color: white; grid-column: span 2; }
+        .btn-run { background-color: #606060; color: white; }
+        .btn-back { background-color: #404040; color: white; grid-column: span 2; }
+    </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center p-6 font-sans">
+<body>
 
-    <h1 class="text-4xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500">✨ 나만의 동물상 분석</h1>
-    <p class="text-slate-400 mb-8">당신의 얼굴은 강아지상일까요, 고양이상일까요?</p>
+<div class="game-container" id="game-main-box">
+    <header>
+        <h1>POKÉMON ROGUE: MOBILE TOUCH (FIXED)</h1>
+    </header>
 
-    <div id="game-container" class="flex flex-col lg:flex-row gap-8 items-center">
-        <div id="webcam-container" class="rounded-3xl overflow-hidden border-8 border-slate-700 shadow-2xl w-[300px] h-[300px] bg-black"></div>
-        
-        <div id="result-card" class="bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-600 w-80 text-center transition-all duration-500">
-            <div id="display-area" class="text-8xl mb-4">🔮</div>
-            <div id="label-container" class="text-3xl font-black text-white mb-2">대기 중...</div>
-            <div id="message" class="text-slate-400">카메라에 얼굴을 가까이 비춰주세요.</div>
+    <div class="stats-panel" id="stats-panel" style="display: none;">
+        <span id="stat-wave">🌊 웨이브: 1</span>
+        <span id="stat-money">💰 골드: 1000</span>
+        <span id="stat-vouchers">🎫 바우처: 5</span>
+        <span id="stat-balls">🔴10 🔵3 🟡1 🟣0</span>
+        <span id="stat-party-count">👥 파티: 1/6</span>
+    </div>
+
+    <!-- 메인 메뉴 -->
+    <div id="screen-menu" class="screen active">
+        <h2 style="text-align: center; margin-bottom: 20px; font-size: 1.2rem;">메가진화 오류 완벽 교정판</h2>
+        <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+            <button id="btn-continue" onclick="continueGame()" style="background-color: #00a86b; color: white; padding: 14px;" disabled>계속하기</button>
+            <button onclick="openStarterSelect()" style="padding: 14px;">새 게임 (스타팅/전설 선택)</button>
+            <button onclick="openGacha()" style="padding: 14px; background-color: #8e44ad; color: white;">전설의 알 뽑기 (가챠)</button>
         </div>
     </div>
 
-    <button id="startBtn" class="mt-10 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-black py-4 px-10 rounded-full transition-all transform hover:scale-105 shadow-xl">
-        분석 시작하기
-    </button>
+    <!-- 스타팅 선택 화면 -->
+    <div id="screen-starter" class="screen">
+        <h2 style="font-size: 1.1rem;">스타팅 / 전설 포켓몬 선택</h2>
+        <p style="font-size: 0.85rem;">최대 코스트 <strong style="color:var(--accent-color);">20</strong> 이하 (현재: <span id="current-cost">0</span> / 20)</p>
+        <div id="starter-container" class="starter-grid"></div>
+        <div style="margin-top: 15px; display: flex; gap: 8px; justify-content: center;">
+            <button onclick="startAdventure()" style="background-color: #00c853; color: white; padding: 12px 20px;">모험 시작!</button>
+            <button onclick="switchScreen('screen-menu')" class="btn-run" style="padding: 12px 20px;">뒤로 가기</button>
+        </div>
+    </div>
 
-    <script type="text/javascript">
-        const URL = "https://teachablemachine.withgoogle.com/models/x-6KfNg9Y/";
-        let model, webcam, maxPredictions;
+    <!-- 배틀 화면 -->
+    <div id="screen-battle" class="screen">
+        <div class="battle-arena" id="battle-arena">
+            <!-- 적 상태창 -->
+            <div class="poke-status-box status-enemy">
+                <div class="status-header">
+                    <span id="enemy-name">야생 포켓몬</span>
+                    <span>Lv.<span id="enemy-lvl">5</span></span>
+                </div>
+                <div class="hp-bar-container">
+                    <div id="enemy-hp-bar" class="hp-bar hp-high"></div>
+                </div>
+                <div style="text-align: right; font-size: 0.7rem; margin-top: 2px;">
+                    HP: <span id="enemy-hp">100</span> / <span id="enemy-maxhp">100</span>
+                </div>
+            </div>
 
-        async function init() {
-            const modelURL = URL + "model.json";
-            const metadataURL = URL + "metadata.json";
+            <div class="platform-enemy"></div>
+            <div class="battler-enemy-wrap" id="enemy-wrap">
+                <div class="poke-img-container">
+                    <img id="enemy-img" class="poke-img" src="" alt="야생 포켓몬">
+                </div>
+            </div>
 
-            document.getElementById("startBtn").innerText = "분석 중...";
-            model = await tmImage.load(modelURL, metadataURL);
-            
-            webcam = new tmImage.Webcam(300, 300, true);
-            await webcam.setup();
-            await webcam.play();
-            window.requestAnimationFrame(loop);
+            <!-- 플레이어 상태창 -->
+            <div class="platform-player"></div>
+            <div class="battler-player-wrap" id="player-wrap">
+                <div class="poke-img-container">
+                    <img id="player-img" class="poke-img" src="" alt="플레이어 포켓몬">
+                </div>
+            </div>
 
-            document.getElementById("webcam-container").appendChild(webcam.canvas);
-            document.getElementById("startBtn").classList.add("hidden");
+            <div class="poke-status-box status-player">
+                <div class="status-header">
+                    <span id="player-name">파이리</span>
+                    <span>Lv.<span id="player-lvl">5</span></span>
+                </div>
+                <div class="hp-bar-container">
+                    <div id="player-hp-bar" class="hp-bar hp-high"></div>
+                </div>
+                <div style="text-align: right; font-size: 0.7rem; margin-top: 2px;">
+                    HP: <span id="player-hp">100</span> / <span id="player-maxhp">100</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="battle-log">전투가 시작되었습니다!</div>
+
+        <!-- 메인 배틀 메뉴 -->
+        <div id="battle-menu" class="actions-grid">
+            <button class="btn-atk" onclick="openSkillMenu()">⚔️ 기술 선택</button>
+            <button class="btn-catch" onclick="openCatchMenu()">🥎 포획 시도</button>
+            <button class="btn-party" onclick="openPartyManagement()">👥 파티/합체</button>
+            <button class="btn-run" onclick="tryRunAway()">🏃 도망간다</button>
+            <button class="btn-special" onclick="openSpecialMenu()">✨ 메가진화 / 특수 변신</button>
+        </div>
+
+        <!-- 특수 변신 메뉴 -->
+        <div id="special-menu" class="actions-grid" style="display: none;">
+            <div id="mega-choice-container" style="grid-column: span 2; display: none; gap: 8px; justify-content: center; margin-bottom: 6px;">
+                <button onclick="executeTransformation('X')" style="background-color: #a855f7; color: white; flex: 1;">🧬 메가뮤츠 X</button>
+                <button onclick="executeTransformation('Y')" style="background-color: #a855f7; color: white; flex: 1;">🧬 메가뮤츠 Y</button>
+            </div>
+            <button id="btn-trans-action" onclick="executeTransformation()" style="background-color: #a855f7; color: white;">🧬 변신 실행</button>
+            <button class="btn-back" onclick="closeSpecialMenu()">🔙 돌아가기</button>
+        </div>
+
+        <!-- 포획 메뉴 -->
+        <div id="catch-menu" class="actions-grid" style="display: none;">
+            <button onclick="tryCatchPokemon('poke')" style="background-color: #e03828; color:white;">🔴 몬스터볼 (<span id="count-poke">10</span>)</button>
+            <button onclick="tryCatchPokemon('great')" style="background-color: #2880ca; color:white;">🔵 슈퍼볼 (<span id="count-great">3</span>)</button>
+            <button onclick="tryCatchPokemon('ultra')" style="background-color: #f8b000; color:black;">🟡 하이퍼볼 (<span id="count-ultra">1</span>)</button>
+            <button onclick="tryCatchPokemon('master')" style="background-color: #8e44ad; color:white;">🟣 마스터볼 (<span id="count-master">0</span>)</button>
+            <button class="btn-back" onclick="closeCatchMenu()">🔙 돌아가기</button>
+        </div>
+
+        <!-- 기술 메뉴 -->
+        <div id="skill-menu" class="actions-grid" style="display: none;">
+            <button id="skill-0-btn" onclick="useSkill(0)">기술 1</button>
+            <button id="skill-1-btn" onclick="useSkill(1)">기술 2</button>
+            <button id="skill-2-btn" onclick="useSkill(2)">기술 3</button>
+            <button id="skill-3-btn" onclick="useSkill(3)">기술 4</button>
+            <button class="btn-back" onclick="closeSkillMenu()">🔙 돌아가기</button>
+        </div>
+    </div>
+
+    <!-- 파티 및 합체 관리 화면 -->
+    <div id="screen-party" class="screen">
+        <h2>파티 관리 및 합체</h2>
+        <p style="font-size:0.8rem; color:var(--text-muted); text-align:center;">네크로즈마(솔가레오/루나아라) 또는 큐레무(제크로무/레시라무)를 선두로 두고 다른 파티원의 '합체' 버튼을 누르면 합체합니다. 합체 중인 포켓몬은 '합체 해제' 버튼으로 원래 둘로 되돌릴 수 있습니다.</p>
+        <div id="party-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 15px 0;"></div>
+        <button class="btn-back" onclick="closePartyManagement()" style="width: 100%; padding: 12px;">전투로 돌아가기</button>
+    </div>
+
+    <!-- 보상 상점 -->
+    <div id="screen-shop" class="screen">
+        <h2>웨이브 클리어 보상 상점</h2>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 12px;">
+            <div class="card" style="width: 150px;">
+                <h3>🍬 이상한 사탕</h3>
+                <p style="font-size: 0.75rem;">선두 레벨 +1</p>
+                <p style="color:var(--accent-color); font-weight:bold;">500 💰</p>
+                <button style="width:100%" onclick="buyItem('candy', 500)">구매</button>
+            </div>
+            <div class="card" style="width: 150px;">
+                <h3>💊 고급 상처약</h3>
+                <p style="font-size: 0.75rem;">선두 HP 완전회복</p>
+                <p style="color:var(--accent-color); font-weight:bold;">400 💰</p>
+                <button style="width:100%" onclick="buyItem('potion', 400)">구매</button>
+            </div>
+            <div class="card" style="width: 150px;">
+                <h3>🎒 볼 세트</h3>
+                <p style="font-size: 0.75rem;">포:5 슈퍼:2 하이퍼:1</p>
+                <p style="color:var(--accent-color); font-weight:bold;">600 💰</p>
+                <button style="width:100%" onclick="buyItem('balls', 600)">구매</button>
+            </div>
+            <div class="card" style="width: 150px;">
+                <h3>🌟 기력의 조각</h3>
+                <p style="font-size: 0.75rem;">기절한 포켓몬 1마리 부활<br>(HP 50%)</p>
+                <p style="color:var(--accent-color); font-weight:bold;">700 💰</p>
+                <button style="width:100%" onclick="buyItem('shard', 700)">구매</button>
+            </div>
+            <div class="card" style="width: 150px;">
+                <h3>💎 기력의 덩어리</h3>
+                <p style="font-size: 0.75rem;">기절한 포켓몬 1마리 부활<br>(HP 100%)</p>
+                <p style="color:var(--accent-color); font-weight:bold;">1800 💰</p>
+                <button style="width:100%" onclick="buyItem('lump', 1800)">구매</button>
+            </div>
+        </div>
+        <br>
+        <button onclick="nextWave()" style="width: 100%; background-color: #00c853; color: white; padding: 14px; font-size: 1.1rem; border-radius: 6px;">다음 웨이브 진행 ➡</button>
+    </div>
+
+    <!-- 부활 대상 선택 화면 -->
+    <div id="screen-revive" class="screen">
+        <h2>부활시킬 포켓몬 선택</h2>
+        <p style="font-size:0.8rem; color:var(--text-muted); text-align:center;">기절한 포켓몬 중 부활시킬 대상을 골라주세요.</p>
+        <div id="revive-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 15px 0;"></div>
+        <button class="btn-back" onclick="cancelRevive()" style="width: 100%; padding: 12px;">🔙 취소 (골드 환불)</button>
+    </div>
+
+    <!-- 파티가 가득 찼을 때 포켓몬 교체 선택 화면 -->
+    <div id="screen-release" class="screen">
+        <h2>파티가 가득 찼습니다!</h2>
+        <p style="font-size:0.8rem; color:var(--text-muted); text-align:center;">새 포켓몬을 파티에 넣으려면 기존 파티원 한 명을 놓아주세요.</p>
+        <div id="release-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 15px 0;"></div>
+        <button class="btn-back" onclick="cancelCatchRelease()" style="width: 100%; padding: 12px;">🌿 새 포켓몬을 놓아준다 (포획 취소)</button>
+    </div>
+
+    <!-- 가챠 화면 -->
+    <div id="screen-gacha" class="screen">
+        <h2 style="text-align: center;">전설의 알 부화장</h2>
+        <p style="text-align: center;">보유 바우처: <strong style="color:var(--accent-color); font-size:1.2rem;"><span id="voucher-count">5</span></strong> 개</p>
+        <div id="gacha-result" style="margin: 20px 0; font-size: 1.1rem; color: var(--accent-color); font-weight: bold; min-height: 35px; text-align: center;"></div>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="pullEgg()" style="background-color: #8e44ad; color: white; padding: 12px 20px;">🥚 알 1개 부화</button>
+            <button onclick="switchScreen('screen-menu')" class="btn-run" style="padding: 12px 20px;">메인으로</button>
+        </div>
+    </div>
+
+    <!-- 레벨업 팝업 (포켓몬 스타일) -->
+    <div id="levelup-overlay" class="levelup-overlay">
+        <div id="levelup-box" class="levelup-box">
+            <img id="levelup-img" src="" alt="레벨업">
+            <h3 id="levelup-name" style="margin:6px 0 2px; font-size:1rem;"></h3>
+            <div id="levelup-level-line" style="font-size:1.25rem; font-weight:bold; color:#e03828; margin-bottom:8px;"></div>
+            <div class="levelup-stat-box">
+                <div>❤️ 최대HP&nbsp; <span id="levelup-hp-old"></span> → <span class="stat-arrow" id="levelup-hp-new"></span></div>
+                <div>⚔️ 공격력&nbsp; <span id="levelup-atk-old"></span> → <span class="stat-arrow" id="levelup-atk-new"></span></div>
+            </div>
+            <button id="levelup-confirm-btn" style="margin-top:10px; width:100%;" onclick="closeLevelUpPopup()">확인</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // [중요 수정] 캐스퐁이나 프테라로 잘못 렌더링되던 메가진화 포케위키/PokeAPI 폼 아이디 완벽 교정
+    const pokeIdMap = {
+        "이상해씨": 1, "파이리": 4, "꼬부기": 7, "피카츄": 25, "구구": 16, "꼬마돌": 74, "루카리오": 448,
+        "뮤츠": 150, "뮤": 151, "칠색조": 250, "루기아": 249, "그란돈": 383, "가이오가": 382, "레쿠쟈": 384,
+        "디아루가": 483, "펄기아": 484, "기라티나": 487, "아르세우스": 493, "레시라무": 643, "제크로무": 644,
+        "큐레무": 646, "제르네아스": 716, "이벨타르": 717, "지가르데": 718, "솔가레오": 791, "루나아라": 792,
+        "네크로즈마": 800, "자시안": 888, "무한다이노": 890, "코라이돈": 1007, "미라이돈": 1008,
+        
+        // 올바른 메가진화 / 특수폼 포케API 고유 ID 매핑 (오매핑 원인 완전 차단)
+        "메가루카리오": 10059,
+        "메가뮤츠X": 10043,
+        "메가뮤츠Y": 10044,
+        "원시가이오가": 10077,
+        "원시그란돈": 10078,
+        "메가레쿠쟈": 10079,
+        "기라티나(오리진)": 10007,
+        "디아루가(오리진)": 10245,
+        "펄기아(오리진)": 10246,
+        "황혼의갈기네크로즈마": 10155,
+        "새벽의날개네크로즈마": 10156,
+        "울트라네크로즈마": 10157,
+
+        // 큐레무 합체 폼 (실제 PokeAPI 폼 ID로 검증 완료)
+        "블랙큐레무": 10022,
+        "화이트큐레무": 10023,
+
+        // 지가르데 퍼펙트폼 (실제 PokeAPI 폼 ID로 검증 완료)
+        "지가르데(퍼펙트폼)": 10120,
+
+        // 1~5세대 주요 포켓몬 추가
+        "리자몽": 6, "잠만보": 143,
+        "마기라스": 248, "블래키": 197,
+        "보스로라": 373, "메타그로스": 376,
+        "한카리아스": 445, "로토무": 479,
+        "볼카로나": 637, "대검귀": 625,
+
+        // 위 최종진화체들의 진화 전 포켓몬 추가
+        "리자드": 5,
+        "구운몽": 446,
+        "애버라스": 246, "데기라스": 247,
+        "이브이": 133,
+        "아공다": 371, "쁘사이저": 372,
+        "마그마그": 374, "메탕구": 375,
+        "딥상어": 443, "상어이빨": 444,
+        "활화르바": 636,
+        "절각참": 624,
+
+        // 개굴닌자 계열 + 지우개굴닌자(유대변화)
+        "개구마르": 656, "개굴반장": 657, "개굴닌자": 658,
+        "지우개굴닌자": 10117
+    };
+
+    const transformationData = {
+        "루카리오": { type: "mega", name: "메가루카리오", label: "🧬 메가진화 (메가루카리오)" },
+        "뮤츠": { type: "mega_choice", label: "🧬 메가진화 (메가뮤츠 X / Y 선택)" },
+        "레쿠쟈": { type: "mega", name: "메가레쿠쟈", label: "✨ 메가진화 (메가레쿠쟈)" },
+        "그란돈": { type: "form", name: "원시그란돈", label: "🔴 원시회귀 (원시그란돈)" },
+        "가이오가": { type: "form", name: "원시가이오가", label: "🔵 원시회귀 (원시가이오가)" },
+        "디아루가": { type: "form", name: "디아루가(오리진)", label: "🔄 폼체인지 (오리진폼)" },
+        "펄기아": { type: "form", name: "펄기아(오리진)", label: "🔄 폼체인지 (오리진폼)" },
+        "기라티나": { type: "form", name: "기라티나(오리진)", label: "🔄 폼체인지 (오리진폼)" },
+        "황혼의갈기네크로즈마": { type: "ultra", name: "울트라네크로즈마", label: "🌟 울트라버스트 (울트라 네크로즈마)" },
+        "새벽의날개네크로즈마": { type: "ultra", name: "울트라네크로즈마", label: "🌟 울트라버스트 (울트라 네크로즈마)" }
+    };
+
+    // [파티 합체 시스템] 선두 포켓몬 + 파티원 재료 -> 합체 결과. 네크로즈마와 큐레무가 공용으로 사용.
+    const fusionRecipes = {
+        "네크로즈마": [
+            { material: "솔가레오", result: "황혼의갈기네크로즈마", icon: "☀️" },
+            { material: "루나아라", result: "새벽의날개네크로즈마", icon: "🌙" }
+        ],
+        "큐레무": [
+            { material: "제크로무", result: "블랙큐레무", icon: "⚡" },
+            { material: "레시라무", result: "화이트큐레무", icon: "🔥" }
+        ]
+    };
+
+    function getBaseName(name) {
+        return name.replace(/^\[.*?\]\s*/g, "").trim();
+    }
+
+    // [핵심 버그 수정 함수] 문자열 매칭 오류 및 인덱스 밀림 현상 완전 방지
+    function getPokeImgUrl(rawName, isBack = false) {
+        let cleanName = getBaseName(rawName);
+        let backPath = isBack ? "back/" : "";
+        let id = pokeIdMap[cleanName];
+
+        if (!id) {
+            if (rawName.includes("메가루카리오")) id = 10059;
+            else if (rawName.includes("메가뮤츠X")) id = 10043;
+            else if (rawName.includes("메가뮤츠Y")) id = 10044;
+            else if (rawName.includes("원시가이오가")) id = 10077;
+            else if (rawName.includes("원시그란돈")) id = 10078;
+            else if (rawName.includes("메가레쿠쟈")) id = 10079;
+            else if (rawName.includes("기라티나(오리진)")) id = 10007;
+            else if (rawName.includes("디아루가(오리진)")) id = 10245;
+            else if (rawName.includes("펄기아(오리진)")) id = 10246;
+            else if (rawName.includes("황혼의갈기")) id = 10155;
+            else if (rawName.includes("새벽의날개")) id = 10156;
+            else if (rawName.includes("울트라네크로즈마")) id = 10157;
+            else id = 4;
         }
 
-        async function loop() {
-            webcam.update();
-            await predict();
-            window.requestAnimationFrame(loop);
+        // 10000번대 이상 특수 폼/메가진화 스프라이트는 정적 PNG 주소로 직결
+        if (id >= 10000) {
+            return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${backPath}${id}.png`;
         }
 
-        async function predict() {
-            const prediction = await model.predict(webcam.canvas);
-            let top = prediction.sort((a, b) => b.probability - a.probability)[0];
-            
-            const labelContainer = document.getElementById("label-container");
-            const displayArea = document.getElementById("display-area");
-            const message = document.getElementById("message");
-            const resultCard = document.getElementById("result-card");
+        if (id <= 649) {
+            return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${backPath}${id}.gif`;
+        } else {
+            return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${backPath}${id}.png`;
+        }
+    }
 
-            if (top.probability > 0.85) {
-                if (top.className.toLowerCase().includes("dog")) {
-                    displayArea.innerHTML = "🐶";
-                    labelContainer.innerText = "강아지상!";
-                    message.innerText = "다정하고 따뜻한 강아지상입니다!";
-                    resultCard.className = "bg-orange-900/30 p-8 rounded-3xl shadow-2xl border border-orange-500 w-80 text-center transition-all duration-500";
-                } else if (top.className.toLowerCase().includes("cat")) {
-                    displayArea.innerHTML = "🐱";
-                    labelContainer.innerText = "고양이상!";
-                    message.innerText = "도도하고 매력적인 고양이상입니다!";
-                    resultCard.className = "bg-purple-900/30 p-8 rounded-3xl shadow-2xl border border-purple-500 w-80 text-center transition-all duration-500";
+    const legendarySkills = {
+        "뮤츠": [{name:"사이코브레이크", power:110}, {name:"파동탄", power:80}, {name:"냉동빔", power:90}, {name:"섀도볼", power:80}],
+        "메가뮤츠X": [{name:"사이코브레이크", power:110}, {name:"인파이트", power:120}, {name:"스톤에지", power:100}, {name:"섀도볼", power:80}],
+        "메가뮤츠Y": [{name:"사이코브레이크", power:110}, {name:"파동탄", power:80}, {name:"냉동빔", power:90}, {name:"섀도볼", power:80}],
+        "메가루카리오": [{name:"인파이트", power:120}, {name:"러스터캐논", power:80}, {name:"신속", power:80}, {name:"스톤에지", power:100}],
+        "뮤": [{name:"사이코키네시스", power:90}, {name:"화염방사", power:90}, {name:"10만볼트", power:90}, {name:"냉동빔", power:90}],
+        "칠색조": [{name:"성스러운불꽃", power:100}, {name:"불새", power:140}, {name:"지진", power:100}, {name:"솔라빔", power:120}],
+        "루기아": [{name:"에어로블라스트", power:100}, {name:"하이드로펌프", power:110}, {name:"사이코키네시스", power:90}, {name:"폭풍", power:110}],
+        "그란돈": [{name:"단애의칼", power:120}, {name:"솔라빔", power:120}, {name:"지진", power:100}, {name:"화염방사", power:90}],
+        "가이오가": [{name:"근원의파동", power:120}, {name:"하이드로펌프", power:110}, {name:"냉동빔", power:90}, {name:"번개", power:110}],
+        "레쿠쟈": [{name:"화룡점정", power:120}, {name:"용의파동", power:85}, {name:"신속", power:80}, {name:"역린", power:110}],
+        "메가레쿠쟈": [{name:"화룡점정", power:120}, {name:"용의파동", power:85}, {name:"신속", power:80}, {name:"지진", power:100}],
+        "디아루가": [{name:"시간의포효", power:130}, {name:"러스터캐논", power:80}, {name:"용의파동", power:85}, {name:"대지의힘", power:90}],
+        "디아루가(오리진)": [{name:"시간의포효", power:130}, {name:"러스터캐논", power:80}, {name:"용의파동", power:85}, {name:"대지의힘", power:90}],
+        "펄기아": [{name:"공간절단", power:100}, {name:"하이드로펌프", power:110}, {name:"용의파동", power:85}, {name:"파동탄", power:80}],
+        "펄기아(오리진)": [{name:"공간절단", power:100}, {name:"하이드로펌프", power:110}, {name:"용의파동", power:85}, {name:"파동탄", power:80}],
+        "기라티나": [{name:"섀도다이브", power:120}, {name:"섀도볼", power:80}, {name:"용의파동", power:85}, {name:"파동탄", power:80}],
+        "기라티나(오리진)": [{name:"섀도다이브", power:120}, {name:"섀도볼", power:80}, {name:"용의파동", power:85}, {name:"파동탄", power:80}],
+        "아르세우스": [{name:"심판의탄환", power:120}, {name:"신속", power:80}, {name:"공간절단", power:100}, {name:"시간의포효", power:130}],
+        "레시라무": [{name:"푸른불꽃", power:130}, {name:"크로스플레임", power:100}, {name:"용의파동", power:85}, {name:"열풍", power:95}],
+        "제크로무": [{name:"뇌격", power:130}, {name:"크로스썬더", power:100}, {name:"용의파동", power:85}, {name:"10만볼트", power:90}],
+        "큐레무": [{name:"얼어붙은세계", power:65}, {name:"냉동빔", power:90}, {name:"용의파동", power:85}, {name:"크로스플레임", power:100}],
+        "블랙큐레무": [{name:"프리즈샥", power:140}, {name:"퓨전볼트", power:100}, {name:"10만볼트", power:90}, {name:"용의파동", power:85}],
+        "화이트큐레무": [{name:"아이스번", power:140}, {name:"퓨전플레어", power:100}, {name:"크로스플레임", power:100}, {name:"용의파동", power:85}],
+        "제르네아스": [{name:"지오컨트롤", power:100}, {name:"문포스", power:95}, {name:"인파이트", power:120}, {name:"사이코키네시스", power:90}],
+        "이벨타르": [{name:"데스윙", power:80}, {name:"악의파동", power:80}, {name:"폭풍", power:110}, {name:"열풍", power:95}],
+        "지가르데": [{name:"코어퍼니셔", power:100}, {name:"사우전드애로", power:90}, {name:"지진", power:100}, {name:"용의파동", power:85}],
+        "솔가레오": [{name:"메테오드라이브", power:100}, {name:"사철포", power:80}, {name:"지진", power:100}, {name:"플레어드라이브", power:120}],
+        "루나아라": [{name:"섀도레이", power:95}, {name:"문포스", power:95}, {name:"사이코키네시스", power:90}, {name:"기합구슬", power:120}],
+        "네크로즈마": [{name:"프리즘레이저", power:130}, {name:"포톤기어", power:100}, {name:"섀도레이", power:95}, {name:"사이코키네시스", power:90}],
+        "황혼의갈기네크로즈마": [{name:"메테오드라이브", power:100}, {name:"포톤기어", power:100}, {name:"지진", power:100}, {name:"스톤에지", power:100}],
+        "새벽의날개네크로즈마": [{name:"섀도레이", power:95}, {name:"포톤기어", power:100}, {name:"문포스", power:95}, {name:"사이코키네시스", power:90}],
+        "울트라네크로즈마": [{name:"빛이세상을가르네", power:140}, {name:"포톤기어", power:100}, {name:"드래곤클로", power:80}, {name:"파동탄", power:80}],
+        "자시안": [{name:"거수참", power:100}, {name:"치근거리기", power:90}, {name:"인파이트", power:120}, {name:"성스러운칼", power:90}],
+        "무한다이노": [{name:"무한다이빔", power:150}, {name:"다이맥스포", power:100}, {name:"오물폭탄", power:90}, {name:"화염방사", power:90}],
+        "코라이돈": [{name:"액셀브레이크", power:120}, {name:"인파이트", power:120}, {name:"플레어드라이브", power:120}, {name:"드래곤크루", power:80}],
+        "미라이돈": [{name:"라이트닝드라이브", power:120}, {name:"10만볼트", power:90}, {name:"용의파동", power:85}, {name:"오버히트", power:130}],
+        "지가르데(퍼펙트폼)": [{name:"코어퍼니셔", power:120}, {name:"사우전드애로", power:100}, {name:"지진", power:100}, {name:"용의파동", power:85}],
+
+        // 1~5세대 주요 포켓몬 전용 스킬
+        "리자몽": [{name:"화염방사", power:90}, {name:"드래곤클로", power:80}, {name:"에어슬래시", power:75}, {name:"지진", power:100}],
+        "잠만보": [{name:"거인의힘", power:120}, {name:"눈사태", power:60}, {name:"지진", power:100}, {name:"파괴광선", power:150}],
+        "마기라스": [{name:"스톤에지", power:100}, {name:"지진", power:100}, {name:"용의파동", power:85}, {name:"아이언헤드", power:80}],
+        "블래키": [{name:"악의파동", power:80}, {name:"섀도볼", power:80}, {name:"아이언테일", power:75}, {name:"문포스", power:95}],
+        "보스로라": [{name:"드래곤클로", power:80}, {name:"역린", power:110}, {name:"화염방사", power:90}, {name:"지진", power:100}],
+        "메타그로스": [{name:"러스터캐논", power:80}, {name:"지진", power:100}, {name:"사이코키네시스", power:90}, {name:"아이언헤드", power:80}],
+        "한카리아스": [{name:"드래곤클로", power:80}, {name:"스톤에지", power:100}, {name:"화염방사", power:90}, {name:"지진", power:100}],
+        "로토무": [{name:"10만볼트", power:90}, {name:"오버히트", power:130}, {name:"냉동빔", power:90}, {name:"섀도볼", power:80}],
+        "볼카로나": [{name:"불새", power:140}, {name:"솔라빔", power:120}, {name:"시그널빔", power:75}, {name:"사이코키네시스", power:90}],
+        "대검귀": [{name:"인파이트", power:120}, {name:"스톤에지", power:100}, {name:"아이언헤드", power:80}, {name:"악의파동", power:80}],
+
+        // 진화 전 포켓몬 전용 스킬
+        "리자드": [{name:"화염방사", power:70}, {name:"할퀴기", power:50}, {name:"용의숨결", power:60}, {name:"불꽃엄니", power:65}],
+        "구운몽": [{name:"몸통박치기", power:60}, {name:"진흙탕", power:55}, {name:"핥기", power:50}, {name:"자이로볼", power:80}],
+        "애버라스": [{name:"바위던지기", power:50}, {name:"할퀴기", power:50}, {name:"돌떨구기", power:40}, {name:"흙먼지", power:35}],
+        "데기라스": [{name:"바위굴리기", power:60}, {name:"진흙탕", power:55}, {name:"지진", power:70}, {name:"돌떨구기", power:50}],
+        "이브이": [{name:"몸통박치기", power:50}, {name:"물기", power:45}, {name:"모래뿌리기", power:35}, {name:"꼬리채찍", power:40}],
+        "아공다": [{name:"용의숨결", power:60}, {name:"할퀴기", power:50}, {name:"몸통박치기", power:55}, {name:"불꽃엄니", power:65}],
+        "쁘사이저": [{name:"용의숨결", power:65}, {name:"몸통박치기", power:60}, {name:"할퀴기", power:55}, {name:"박치기", power:50}],
+        "마그마그": [{name:"몸통박치기", power:55}, {name:"아이언헤드", power:60}, {name:"헤드밧", power:50}, {name:"기합구슬", power:60}],
+        "메탕구": [{name:"아이언헤드", power:70}, {name:"사이코키네시스", power:65}, {name:"몸통박치기", power:60}, {name:"헤드밧", power:55}],
+        "딥상어": [{name:"물기", power:55}, {name:"모래뿌리기", power:35}, {name:"진흙뿌리기", power:40}, {name:"드래곤테일", power:60}],
+        "상어이빨": [{name:"용의숨결", power:65}, {name:"물기", power:60}, {name:"지진", power:70}, {name:"돌진", power:55}],
+        "활화르바": [{name:"벌레먹기", power:55}, {name:"불태우기", power:60}, {name:"몸통박치기", power:50}, {name:"불꽃엄니", power:65}],
+        "절각참": [{name:"할퀴기", power:50}, {name:"강철날개", power:60}, {name:"기습", power:55}, {name:"악의파동", power:65}],
+
+        // 개굴닌자 계열 + 지우개굴닌자(유대변화)
+        "개구마르": [{name:"거품", power:40}, {name:"물총", power:40}, {name:"할퀴기", power:35}, {name:"연속거품", power:50}],
+        "개굴반장": [{name:"거품", power:65}, {name:"물대포", power:60}, {name:"연속발차기", power:55}, {name:"닌자칼날", power:60}],
+        "개굴닌자": [{name:"물수리검", power:90}, {name:"악의파동", power:80}, {name:"섀도볼", power:80}, {name:"연속기합", power:75}],
+        "지우개굴닌자": [{name:"물수리검(강화)", power:130}, {name:"악의파동", power:90}, {name:"섀도볼", power:85}, {name:"연속기합", power:80}],
+
+        "기본": [{name:"몸통박치기", power:40}, {name:"물기", power:45}, {name:"전광석화", power:40}, {name:"화염방사", power:85}]
+    };
+
+    const starterDatabase = [
+        { name: "이상해씨", cost: 2, gen: "1세대" }, { name: "파이리", cost: 3, gen: "1세대" }, { name: "꼬부기", cost: 2, gen: "1세대" }, { name: "피카츄", cost: 2, gen: "1세대" },
+        { name: "루카리오", cost: 4, gen: "4세대" },
+        { name: "뮤츠", cost: 8, gen: "1세대", isLegend: true }, { name: "뮤", cost: 7, gen: "1세대", isLegend: true },
+        { name: "칠색조", cost: 8, gen: "2세대", isLegend: true }, { name: "루기아", cost: 8, gen: "2세대", isLegend: true },
+        { name: "그란돈", cost: 9, gen: "3세대", isLegend: true }, { name: "가이오가", cost: 9, gen: "3세대", isLegend: true }, { name: "레쿠쟈", cost: 9, gen: "3세대", isLegend: true },
+        { name: "디아루가", cost: 8, gen: "4세대", isLegend: true }, { name: "펄기아", cost: 8, gen: "4세대", isLegend: true }, { name: "기라티나", cost: 8, gen: "4세대", isLegend: true }, { name: "아르세우스", cost: 10, gen: "4세대", isLegend: true },
+        { name: "레시라무", cost: 8, gen: "5세대", isLegend: true }, { name: "제크로무", cost: 8, gen: "5세대", isLegend: true }, { name: "큐레무", cost: 8, gen: "5세대", isLegend: true },
+        { name: "제르네아스", cost: 8, gen: "6세대", isLegend: true }, { name: "이벨타르", cost: 8, gen: "6세대", isLegend: true }, { name: "지가르데", cost: 8, gen: "6세대", isLegend: true },
+        { name: "솔가레오", cost: 8, gen: "7세대", isLegend: true }, { name: "루나아라", cost: 8, gen: "7세대", isLegend: true }, { name: "네크로즈마", cost: 9, gen: "7세대", isLegend: true },
+        { name: "자시안", cost: 9, gen: "8세대", isLegend: true }, { name: "무한다이노", cost: 9, gen: "8세대", isLegend: true },
+        { name: "코라이돈", cost: 8, gen: "9세대", isLegend: true }, { name: "미라이돈", cost: 8, gen: "9세대", isLegend: true },
+
+        // 1~5세대 주요 포켓몬 (진화형은 스타터에서 제외 - 레벨업으로 진화하여 얻습니다)
+        { name: "로토무", cost: 4, gen: "4세대" },
+
+        // 위 최종진화체들의 진화 전(1단계) 포켓몬만 스타터로 제공 - 레벨업하면 자동 진화합니다
+        { name: "리자드", cost: 3, gen: "1세대" },
+        { name: "구운몽", cost: 2, gen: "4세대" },
+        { name: "애버라스", cost: 2, gen: "2세대" },
+        { name: "이브이", cost: 2, gen: "1세대" },
+        { name: "아공다", cost: 2, gen: "3세대" },
+        { name: "마그마그", cost: 2, gen: "3세대" },
+        { name: "딥상어", cost: 2, gen: "4세대" },
+        { name: "활화르바", cost: 3, gen: "5세대" },
+        { name: "절각참", cost: 2, gen: "5세대" },
+
+        // 개굴닌자 계열 - 개구마르만 스타터로 제공 (레벨업으로 개굴반장 → 개굴닌자로 진화, 유대변화로 지우개굴닌자 변신 가능)
+        { name: "개구마르", cost: 2, gen: "6세대" }
+    ];
+
+    // [레벨업 진화 시스템] key 포켓몬이 해당 레벨에 도달하면 evolvesTo로 자동 진화한다
+    const evolutionChains = {
+        "파이리": { evolvesTo: "리자드", level: 16 },
+        "리자드": { evolvesTo: "리자몽", level: 36 },
+        "구운몽": { evolvesTo: "잠만보", level: 31 },
+        "애버라스": { evolvesTo: "데기라스", level: 30 },
+        "데기라스": { evolvesTo: "마기라스", level: 55 },
+        "이브이": { evolvesTo: "블래키", level: 25 },
+        "아공다": { evolvesTo: "쁘사이저", level: 30 },
+        "쁘사이저": { evolvesTo: "보스로라", level: 50 },
+        "마그마그": { evolvesTo: "메탕구", level: 20 },
+        "메탕구": { evolvesTo: "메타그로스", level: 45 },
+        "딥상어": { evolvesTo: "상어이빨", level: 24 },
+        "상어이빨": { evolvesTo: "한카리아스", level: 48 },
+        "활화르바": { evolvesTo: "볼카로나", level: 59 },
+        "절각참": { evolvesTo: "대검귀", level: 52 },
+        "개구마르": { evolvesTo: "개굴반장", level: 16 },
+        "개굴반장": { evolvesTo: "개굴닌자", level: 36 }
+    };
+
+    // 진화 가능 여부 확인 (변신/합체 상태에서는 진화하지 않음)
+    function checkEvolution(mon) {
+        if (!mon || mon.transformed || mon.fusedFrom) return null;
+        let baseName = getBaseName(mon.name);
+        let evo = evolutionChains[baseName];
+        if (!evo || mon.level < evo.level) return null;
+        return evo;
+    }
+
+    // 진화 실행: 이름과 능력치를 갱신한다
+    function evolveMon(mon, evo) {
+        let oldName = mon.name;
+        mon.name = evo.evolvesTo;
+        mon.maxHp += 25;
+        mon.hp += 25;
+        mon.atk += 8;
+        log(`🌟 ${oldName}이(가) [${evo.evolvesTo}](으)로 진화했다!`);
+    }
+
+    let game = {
+        wave: 1, money: 1000, vouchers: 5,
+        balls: { poke: 10, great: 3, ultra: 1, master: 0 },
+        activeIndex: 0, party: [],
+        unlockedStarters: starterDatabase.map(d => d.name),
+        enemy: { name: "구구", level: 5, hp: 60, maxHp: 60, atk: 14 }
+    };
+
+    let selectedStartersForRun = [];
+    let currentScreen = 'screen-menu';
+    let previousScreen = 'screen-battle';
+
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                btn.click();
+            }, { passive: false });
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'm' || e.key === 'M') {
+                if (currentScreen !== 'screen-menu') {
+                    switchScreen('screen-menu');
                 }
+            }
+        });
+    });
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        currentScreen = screenId;
+        document.getElementById('stats-panel').style.display = (screenId === 'screen-menu' || screenId === 'screen-gacha' || screenId === 'screen-starter') ? 'none' : 'flex';
+        if (screenId === 'screen-menu') document.getElementById('btn-continue').disabled = game.party.length === 0;
+    }
+
+    function continueGame() { if (game.party.length > 0) switchScreen(previousScreen); }
+
+    function triggerAttackAnimation(isPlayerAttacker) {
+        const attackerImg = isPlayerAttacker ? document.getElementById('player-img') : document.getElementById('enemy-img');
+        const defenderImg = isPlayerAttacker ? document.getElementById('enemy-img') : document.getElementById('player-img');
+        const attackClass = isPlayerAttacker ? 'anim-attack-player' : 'anim-attack-enemy';
+
+        attackerImg.classList.add(attackClass);
+        setTimeout(() => {
+            attackerImg.classList.remove(attackClass);
+            defenderImg.classList.add('anim-hit');
+            setTimeout(() => defenderImg.classList.remove('anim-hit'), 450);
+        }, 280);
+    }
+
+    function updateHpBarColor(barElement, ratio) {
+        barElement.classList.remove('hp-high', 'hp-medium', 'hp-low');
+        if (ratio > 0.5) barElement.classList.add('hp-high');
+        else if (ratio > 0.2) barElement.classList.add('hp-medium');
+        else barElement.classList.add('hp-low');
+    }
+
+    function updateUI() {
+        document.getElementById('stat-wave').innerText = `🌊 웨이브: ${game.wave}`;
+        document.getElementById('stat-money').innerText = `💰 골드: ${game.money}`;
+        document.getElementById('stat-vouchers').innerText = `🎫 바우처: ${game.vouchers}`;
+        document.getElementById('stat-balls').innerText = `🔴${game.balls.poke} 🔵${game.balls.great} 🟡${game.balls.ultra} 🟣${game.balls.master}`;
+        document.getElementById('stat-party-count').innerText = `👥 파티: ${game.party.length}/6`;
+
+        let activeMon = game.party[game.activeIndex];
+        const playerWrap = document.getElementById('player-wrap');
+
+        if (activeMon) {
+            checkZygardeAutoForm(activeMon);
+            document.getElementById('player-name').innerText = activeMon.name;
+            document.getElementById('player-img').src = getPokeImgUrl(activeMon.name, true);
+            document.getElementById('player-lvl').innerText = activeMon.level;
+            document.getElementById('player-hp').innerText = activeMon.hp;
+            document.getElementById('player-maxhp').innerText = activeMon.maxHp;
+            
+            let hpRatio = activeMon.hp / activeMon.maxHp;
+            let bar = document.getElementById('player-hp-bar');
+            bar.style.width = Math.max(0, hpRatio * 100) + '%';
+            updateHpBarColor(bar, hpRatio);
+
+            playerWrap.classList.remove('mega-mode', 'form-mode', 'fusion-mode');
+            if (activeMon.transformed) {
+                let base = getBaseName(activeMon.name);
+                let tInfo = transformationData[base];
+                if ((tInfo && tInfo.type === 'mega') || activeMon.name.includes("메가")) playerWrap.classList.add('mega-mode');
+                else playerWrap.classList.add('form-mode');
+            } else if (activeMon.fusedFrom) {
+                playerWrap.classList.add('fusion-mode');
             }
         }
 
-        document.getElementById("startBtn").addEventListener("click", init);
-    </script>
+        document.getElementById('enemy-name').innerText = game.enemy.name;
+        document.getElementById('enemy-img').src = getPokeImgUrl(game.enemy.name, false);
+        document.getElementById('enemy-lvl').innerText = game.enemy.level;
+        document.getElementById('enemy-hp').innerText = game.enemy.hp;
+        document.getElementById('enemy-maxhp').innerText = game.enemy.maxHp;
+        
+        let enemyHpRatio = game.enemy.hp / game.enemy.maxHp;
+        let eBar = document.getElementById('enemy-hp-bar');
+        eBar.style.width = Math.max(0, enemyHpRatio * 100) + '%';
+        updateHpBarColor(eBar, enemyHpRatio);
+
+        const arena = document.getElementById('battle-arena');
+        if (game.enemy.isBoss) arena.classList.add('boss-bg');
+        else arena.classList.remove('boss-bg');
+    }
+
+    function log(message) {
+        const logBox = document.getElementById('battle-log');
+        logBox.innerHTML += `<div>> ${message}</div>`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // [포켓몬 스타일 레벨업 팝업]
+    let _levelUpCallback = null;
+
+    function showLevelUpPopup(mon, oldLevel, oldMaxHp, oldAtk, onClose) {
+        document.getElementById('levelup-img').src = getPokeImgUrl(mon.name, false);
+        document.getElementById('levelup-name').innerText = mon.name;
+        document.getElementById('levelup-level-line').innerText = `Lv.${oldLevel} → Lv.${mon.level} ✨`;
+        document.getElementById('levelup-hp-old').innerText = oldMaxHp;
+        document.getElementById('levelup-hp-new').innerText = mon.maxHp;
+        document.getElementById('levelup-atk-old').innerText = oldAtk;
+        document.getElementById('levelup-atk-new').innerText = mon.atk;
+
+        const overlay = document.getElementById('levelup-overlay');
+        const box = document.getElementById('levelup-box');
+        overlay.style.display = 'flex';
+        box.classList.remove('levelup-pop');
+        void box.offsetWidth; // 강제 리플로우 -> 애니메이션 재시작
+        box.classList.add('levelup-pop');
+
+        log(`🎉 ${mon.name}이(가) Lv.${mon.level}(으)로 레벨업했다! (최대HP ${oldMaxHp}→${mon.maxHp}, 공격 ${oldAtk}→${mon.atk})`);
+        _levelUpCallback = onClose || null;
+    }
+
+    function closeLevelUpPopup() {
+        document.getElementById('levelup-overlay').style.display = 'none';
+        let cb = _levelUpCallback;
+        _levelUpCallback = null;
+        if (cb) cb();
+    }
+
+    function openSpecialMenu() {
+        let mon = game.party[game.activeIndex];
+        let baseName = getBaseName(mon.name);
+        let btn = document.getElementById('btn-trans-action');
+        let megaChoiceContainer = document.getElementById('mega-choice-container');
+
+        if (mon.transformed) {
+            log(`⚠️ ${mon.name}은(는) 이미 변신 상태입니다!`);
+            return;
+        }
+
+        if (!transformationData[baseName]) {
+            btn.innerText = "❌ 이 포켓몬은 변신할 수 없습니다";
+            btn.disabled = true;
+            megaChoiceContainer.style.display = 'none';
+            btn.style.display = 'block';
+        } else if (transformationData[baseName].type === 'mega_choice') {
+            megaChoiceContainer.style.display = 'flex';
+            btn.style.display = 'none';
+        } else {
+            megaChoiceContainer.style.display = 'none';
+            btn.style.display = 'block';
+            btn.innerText = transformationData[baseName].label;
+            btn.disabled = false;
+        }
+
+        document.getElementById('battle-menu').style.display = 'none';
+        document.getElementById('special-menu').style.display = 'grid';
+    }
+
+    function closeSpecialMenu() {
+        document.getElementById('special-menu').style.display = 'none';
+        document.getElementById('battle-menu').style.display = 'grid';
+    }
+
+    function executeTransformation(choice = null) {
+        closeSpecialMenu();
+        let mon = game.party[game.activeIndex];
+        let baseName = getBaseName(mon.name);
+        let tData = transformationData[baseName];
+        if (!tData || mon.transformed) return;
+
+        const mainBox = document.getElementById('game-main-box');
+        mainBox.classList.add('transform-flash');
+        setTimeout(() => mainBox.classList.remove('transform-flash'), 600);
+
+        // 폼체인지 해제를 위해 변신 전 상태를 백업해둔다
+        mon.preTransform = { name: mon.name, atk: mon.atk, maxHp: mon.maxHp };
+
+        mon.transformed = true;
+        if (tData.type === 'mega_choice') {
+            if (choice === 'X') {
+                mon.name = "[변신] 메가뮤츠X";
+            } else {
+                mon.name = "[변신] 메가뮤츠Y";
+            }
+        } else {
+            mon.name = `[변신] ${tData.name}`;
+        }
+
+        mon.atk = Math.floor(mon.atk * 1.75);
+        mon.maxHp += 100;
+        mon.hp += 100;
+
+        log(`✨ [진화/폼체인지 성공!] ${baseName}이(가) 변신에 성공했습니다!`);
+        updateUI();
+    }
+
+    // [개굴닌자 전용] 상대 포켓몬을 쓰러뜨리면 유대변화로 지우개굴닌자로 자동 변신한다
+    function checkGreninjaBattleBond(mon) {
+        if (!mon || mon.hp <= 0 || mon.transformed) return;
+        if (getBaseName(mon.name) !== "개굴닌자") return;
+
+        const mainBox = document.getElementById('game-main-box');
+        mainBox.classList.add('transform-flash');
+        setTimeout(() => mainBox.classList.remove('transform-flash'), 600);
+
+        mon.preTransform = { name: mon.name, atk: mon.atk, maxHp: mon.maxHp };
+        mon.transformed = true;
+        mon.name = "[변신] 지우개굴닌자";
+        mon.atk = Math.floor(mon.atk * 1.5);
+        mon.maxHp += 80;
+        mon.hp += 80;
+
+        log(`🥷 유대변화 발동! 개굴닌자가 지우와의 유대로 [지우개굴닌자]로 변신했다!`);
+    }
+
+    // [지가르데 전용] HP가 60% 이하로 떨어지면 자동으로 퍼펙트폼으로 변신한다
+    function checkZygardeAutoForm(mon) {
+        if (!mon || mon.hp <= 0 || mon.transformed) return;
+        if (getBaseName(mon.name) !== "지가르데") return;
+        if (mon.hp / mon.maxHp > 0.6) return;
+
+        const mainBox = document.getElementById('game-main-box');
+        mainBox.classList.add('transform-flash');
+        setTimeout(() => mainBox.classList.remove('transform-flash'), 600);
+
+        mon.preTransform = { name: mon.name, atk: mon.atk, maxHp: mon.maxHp };
+        mon.transformed = true;
+        mon.name = "[변신] 지가르데(퍼펙트폼)";
+        mon.atk = Math.floor(mon.atk * 1.6);
+        mon.maxHp += 150;
+        mon.hp += 150;
+
+        log(`💚 HP가 위험해지자 지가르데가 코어의 힘을 개방! [퍼펙트폼]으로 변신했다!`);
+    }
+
+    function revertTransformation(idx) {
+        let mon = game.party[idx];
+        if (!mon || !mon.transformed || !mon.preTransform) return;
+
+        const mainBox = document.getElementById('game-main-box');
+        mainBox.classList.add('transform-flash');
+        setTimeout(() => mainBox.classList.remove('transform-flash'), 600);
+
+        let hpRatio = mon.maxHp > 0 ? mon.hp / mon.maxHp : 1;
+        let revertedName = mon.preTransform.name;
+        mon.name = revertedName;
+        mon.atk = mon.preTransform.atk;
+        mon.maxHp = mon.preTransform.maxHp;
+        mon.hp = Math.max(1, Math.round(mon.maxHp * hpRatio));
+        mon.transformed = false;
+        delete mon.preTransform;
+
+        log(`🔄 ${mon.name}이(가) 폼체인지를 해제하고 원래 모습으로 돌아왔습니다!`);
+        updateUI();
+        openPartyManagement();
+    }
+
+    function openStarterSelect() { selectedStartersForRun = []; renderStarterGrid(); switchScreen('screen-starter'); }
+
+    function renderStarterGrid() {
+        const container = document.getElementById('starter-container');
+        container.innerHTML = "";
+        let currentCostSum = selectedStartersForRun.reduce((sum, name) => {
+            let data = starterDatabase.find(d => d.name === name);
+            return sum + (data ? data.cost : 2);
+        }, 0);
+
+        document.getElementById('current-cost').innerText = currentCostSum;
+        starterDatabase.forEach(poke => {
+            let isUnlocked = game.unlockedStarters.includes(poke.name);
+            let isSelected = selectedStartersForRun.includes(poke.name);
+            if (!isUnlocked) {
+                container.innerHTML += `<div class="card" style="opacity:0.35;">🔒 ???</div>`;
+            } else {
+                let imgUrl = getPokeImgUrl(poke.name, false);
+                container.innerHTML += `
+                    <div class="card ${isSelected ? 'selected' : ''}" onclick="toggleStarterSelection('${poke.name}')">
+                        <img src="${imgUrl}" style="height:44px;">
+                        <div>${poke.name}</div>
+                        <span class="cost-badge">${poke.cost}</span>
+                        ${poke.isLegend ? '<br><span class="legendary-badge">전설</span>' : ''}
+                    </div>`;
+            }
+        });
+    }
+
+    function toggleStarterSelection(name) {
+        let index = selectedStartersForRun.indexOf(name);
+        if (index > -1) selectedStartersForRun.splice(index, 1);
+        else {
+            let itemCost = (starterDatabase.find(d => d.name === name) || {}).cost || 2;
+            let currentCostSum = selectedStartersForRun.reduce((sum, n) => sum + ((starterDatabase.find(d => d.name === n) || {}).cost || 2), 0);
+            if (currentCostSum + itemCost <= 20 && selectedStartersForRun.length < 6) {
+                selectedStartersForRun.push(name);
+            }
+        }
+        renderStarterGrid();
+    }
+
+    function startAdventure() {
+        if (selectedStartersForRun.length === 0) return;
+        game.party = selectedStartersForRun.map(name => {
+            let isLegend = (starterDatabase.find(d => d.name === name) || {}).isLegend;
+            return {
+                name: name,
+                level: 5,
+                hp: isLegend ? 180 : 100,
+                maxHp: isLegend ? 180 : 100,
+                atk: isLegend ? 35 : 22,
+                transformed: false
+            };
+        });
+        game.activeIndex = 0; game.wave = 1; game.money = 1000;
+        document.getElementById('battle-log').innerHTML = "<div>전투가 시작되었습니다!</div>";
+        spawnEnemy();
+        switchScreen('screen-battle');
+        log(`🚀 포켓몬 모험이 시작되었습니다!`);
+        updateUI();
+    }
+
+    function spawnEnemy() {
+        const normalWilds = [
+            { name: "구구", hp: 60, maxHp: 60, atk: 14 },
+            { name: "꼬마돌", hp: 80, maxHp: 80, atk: 18 },
+            { name: "피카츄", hp: 70, maxHp: 70, atk: 22 },
+            { name: "루카리오", hp: 110, maxHp: 110, atk: 28 }
+        ];
+
+        const legendaryBosses = [
+            { name: "뮤츠", hp: 280, maxHp: 280, atk: 52 }, { name: "뮤", hp: 250, maxHp: 250, atk: 45 },
+            { name: "칠색조", hp: 290, maxHp: 290, atk: 50 }, { name: "루기아", hp: 300, maxHp: 300, atk: 46 },
+            { name: "그란돈", hp: 300, maxHp: 300, atk: 55 }, { name: "가이오가", hp: 300, maxHp: 300, atk: 55 }, { name: "레쿠쟈", hp: 310, maxHp: 310, atk: 58 },
+            { name: "디아루가", hp: 320, maxHp: 320, atk: 54 }, { name: "펄기아", hp: 310, maxHp: 310, atk: 54 }, { name: "기라티나", hp: 330, maxHp: 330, atk: 52 }, { name: "아르세우스", hp: 360, maxHp: 360, atk: 65 },
+            { name: "레시라무", hp: 310, maxHp: 310, atk: 55 }, { name: "제크로무", hp: 310, maxHp: 310, atk: 55 }, { name: "큐레무", hp: 320, maxHp: 320, atk: 56 },
+            { name: "제르네아스", hp: 310, maxHp: 310, atk: 52 }, { name: "이벨타르", hp: 310, maxHp: 310, atk: 53 }, { name: "지가르데", hp: 340, maxHp: 340, atk: 50 },
+            { name: "솔가레오", hp: 320, maxHp: 320, atk: 55 }, { name: "루나아라", hp: 320, maxHp: 320, atk: 55 }, { name: "네크로즈마", hp: 330, maxHp: 330, atk: 58 },
+            { name: "자시안", hp: 330, maxHp: 330, atk: 60 }, { name: "무한다이노", hp: 380, maxHp: 380, atk: 62 },
+            { name: "코라이돈", hp: 320, maxHp: 320, atk: 56 }, { name: "미라이돈", hp: 320, maxHp: 320, atk: 56 }
+        ];
+
+        if (game.wave % 5 === 0) {
+            let boss = legendaryBosses[Math.floor(Math.random() * legendaryBosses.length)];
+            let levelBoost = Math.floor(game.wave * 1.5);
+            game.enemy = {
+                name: boss.name,
+                hp: boss.hp + levelBoost * 15,
+                maxHp: boss.hp + levelBoost * 15,
+                atk: boss.atk + levelBoost * 4,
+                level: game.wave + 3,
+                isBoss: true
+            };
+            log(`🚨 [전설 출현] 초전설 포켓몬 [${boss.name}]이(가) 나타났습니다!`);
+        } else {
+            let wild = normalWilds[Math.floor(Math.random() * normalWilds.length)];
+            let levelBoost = Math.floor(game.wave * 1.2);
+            game.enemy = {
+                name: wild.name,
+                hp: wild.hp + levelBoost * 8,
+                maxHp: wild.hp + levelBoost * 8,
+                atk: wild.atk + levelBoost * 2,
+                level: game.wave,
+                isBoss: false
+            };
+        }
+    }
+
+    function openSkillMenu() {
+        let mon = game.party[game.activeIndex];
+        let baseName = getBaseName(mon.name);
+        let skills = legendarySkills[mon.name] || legendarySkills[baseName] || legendarySkills["기본"];
+        for (let i = 0; i < 4; i++) {
+            document.getElementById(`skill-${i}-btn`).innerText = `${skills[i].name} (${skills[i].power})`;
+        }
+        document.getElementById('battle-menu').style.display = 'none';
+        document.getElementById('skill-menu').style.display = 'grid';
+    }
+
+    function closeSkillMenu() {
+        document.getElementById('skill-menu').style.display = 'none';
+        document.getElementById('battle-menu').style.display = 'grid';
+    }
+
+    function useSkill(skillIndex) {
+        closeSkillMenu();
+        let mon = game.party[game.activeIndex];
+        let baseName = getBaseName(mon.name);
+        let skills = legendarySkills[mon.name] || legendarySkills[baseName] || legendarySkills["기본"];
+        let skill = skills[skillIndex];
+
+        triggerAttackAnimation(true);
+
+        let dmg = Math.floor(mon.atk * (skill.power / 32)) + Math.floor(Math.random() * 8);
+        game.enemy.hp = Math.max(0, game.enemy.hp - dmg);
+        log(`⚔️ ${mon.name}의 [${skill.name}]! ${game.enemy.name}에게 ${dmg}의 데미지!`);
+
+        checkBattleState();
+    }
+
+    function openCatchMenu() {
+        document.getElementById('count-poke').innerText = game.balls.poke;
+        document.getElementById('count-great').innerText = game.balls.great;
+        document.getElementById('count-ultra').innerText = game.balls.ultra;
+        document.getElementById('count-master').innerText = game.balls.master;
+        document.getElementById('battle-menu').style.display = 'none';
+        document.getElementById('catch-menu').style.display = 'grid';
+    }
+
+    function closeCatchMenu() {
+        document.getElementById('catch-menu').style.display = 'none';
+        document.getElementById('battle-menu').style.display = 'grid';
+    }
+
+    function tryCatchPokemon(ballType) {
+        if (game.balls[ballType] <= 0) return;
+        game.balls[ballType]--;
+        closeCatchMenu();
+        log(`🥎 ${game.enemy.name}에게 볼을 던졌다!`);
+
+        let hpRatio = game.enemy.hp / game.enemy.maxHp;
+        let catchChance = (0.28 + (1 - hpRatio) * 0.65) / (game.enemy.isBoss ? 2.3 : 1.0);
+        if (ballType === 'master') catchChance = 1.0;
+
+        if (Math.random() < catchChance) {
+            log(`✨ ${game.enemy.name} 포획 성공!`);
+            let newMon = {
+                name: game.enemy.name,
+                level: game.enemy.level,
+                hp: game.enemy.maxHp,
+                maxHp: game.enemy.maxHp,
+                atk: game.enemy.atk,
+                transformed: false
+            };
+            if (game.party.length < 6) {
+                game.party.push(newMon);
+                updateUI();
+                setTimeout(() => { switchScreen('screen-shop'); }, 1000);
+            } else {
+                updateUI();
+                openReleaseSelect(newMon);
+            }
+        } else {
+            log(`💨 포켓몬이 볼에서 빠져나왔다!`);
+            enemyTurn();
+        }
+        updateUI();
+    }
+
+    // [파티가 가득 찼을 때: 포켓몬 교체 시스템]
+    let pendingCatch = null;
+
+    function openReleaseSelect(newMon) {
+        pendingCatch = newMon;
+        const container = document.getElementById('release-container');
+        container.innerHTML = `
+            <div class="card" style="border-color:#00c853; background:#183020;">
+                <img src="${getPokeImgUrl(newMon.name, false)}" style="height:50px;">
+                <div>✨ NEW: ${newMon.name}</div>
+                <div>Lv.${newMon.level}</div>
+            </div>`;
+        game.party.forEach((p, idx) => {
+            container.innerHTML += `
+                <div class="card">
+                    <img src="${getPokeImgUrl(p.name, false)}" style="height:50px;">
+                    <div>${p.name}</div>
+                    <div>Lv.${p.level} | HP:${p.hp}/${p.maxHp}</div>
+                    <button style="width:100%; background:#e03828; color:#fff;" onclick="confirmRelease(${idx})">이 포켓몬을 놓아준다</button>
+                </div>`;
+        });
+        switchScreen('screen-release');
+    }
+
+    function confirmRelease(idx) {
+        let released = game.party[idx];
+        let newMon = pendingCatch;
+        if (!newMon) return;
+        log(`👋 ${released.name}을(를) 놓아주고, 대신 ${newMon.name}이(가) 파티에 합류했습니다!`);
+        game.party.splice(idx, 1, newMon);
+        pendingCatch = null;
+        updateUI();
+        setTimeout(() => { switchScreen('screen-shop'); }, 800);
+    }
+
+    function cancelCatchRelease() {
+        if (pendingCatch) {
+            log(`🌿 ${pendingCatch.name}을(를) 자연으로 돌려보냈습니다.`);
+        }
+        pendingCatch = null;
+        switchScreen('screen-shop');
+    }
+
+    function tryRunAway() {
+        if (game.enemy.isBoss) {
+            log(`❌ 전설의 보스전에서는 도망칠 수 없습니다!`);
+            return;
+        }
+        log(`🏃 무사히 도망쳤습니다.`);
+        setTimeout(() => { nextWave(); }, 600);
+    }
+
+    function checkBattleState() {
+        if (game.enemy.hp <= 0) {
+            checkGreninjaBattleBond(game.party[game.activeIndex]);
+            let reward = game.enemy.isBoss ? 900 : 300;
+            log(`🎉 야생의 ${game.enemy.name}을(를) 쓰러뜨렸다! (${reward}원 획득)`);
+            game.money += reward;
+            updateUI();
+            setTimeout(() => { switchScreen('screen-shop'); }, 800);
+            return;
+        }
+        setTimeout(() => enemyTurn(), 500);
+    }
+
+    function enemyTurn() {
+        let mon = game.party[game.activeIndex];
+        triggerAttackAnimation(false);
+
+        let enemyDmg = Math.max(6, game.enemy.atk - 4 + Math.floor(Math.random() * 6));
+        mon.hp = Math.max(0, mon.hp - enemyDmg);
+        log(`💥 ${game.enemy.name}의 공격! ${mon.name}이(가) ${enemyDmg} 데미지를 입었다.`);
+
+        checkZygardeAutoForm(mon);
+
+        if (mon.hp <= 0) {
+            log(`☠️ ${mon.name}이(가) 전투불능이 되었습니다!`);
+            let aliveIndex = game.party.findIndex(p => p.hp > 0);
+            if (aliveIndex === -1) {
+                alert("파티 전멸! 게임 오버.");
+                game.party = [];
+                switchScreen('screen-menu');
+            } else {
+                game.activeIndex = aliveIndex;
+            }
+        }
+        updateUI();
+    }
+
+    function openPartyManagement() {
+        const container = document.getElementById('party-container');
+        container.innerHTML = "";
+        let activeMon = game.party[game.activeIndex];
+        let activeBaseName = activeMon ? getBaseName(activeMon.name) : null;
+        // 이미 합체/변신된 포켓몬은 새로 합체할 수 없다
+        let activeRecipes = (activeMon && !activeMon.fusedFrom && !activeMon.transformed) ? fusionRecipes[activeBaseName] : null;
+
+        game.party.forEach((p, idx) => {
+            let isActive = idx === game.activeIndex;
+            let imgUrl = getPokeImgUrl(p.name, false);
+            let basePName = getBaseName(p.name);
+            let matchingRecipe = (activeRecipes && !isActive) ? activeRecipes.find(r => r.material === basePName) : null;
+
+            let fuseBtn = matchingRecipe
+                ? `<button style="background:#f8b000; color:#111; margin-top:4px;" onclick="tryFuse(${idx})">${matchingRecipe.icon} 합체하기</button>`
+                : '';
+            let unfuseBtn = (isActive && p.fusedFrom)
+                ? `<button style="background:#607d8b; color:#fff; margin-top:4px;" onclick="unfuseMon(${idx})">💫 합체 해제</button>`
+                : '';
+            let revertBtn = (isActive && p.transformed)
+                ? `<button style="background:#0ea5e9; color:#fff; margin-top:4px;" onclick="revertTransformation(${idx})">🔄 폼체인지 해제</button>`
+                : '';
+
+            container.innerHTML += `
+                <div class="card ${isActive ? 'selected' : ''}">
+                    <img src="${imgUrl}" style="height:50px;">
+                    <div>${p.name}</div>
+                    <div>Lv.${p.level} | HP:${p.hp}/${p.maxHp}</div>
+                    ${!isActive && p.hp > 0 ? `<button onclick="switchActivePokemon(${idx})">교체</button>` : ''}
+                    ${fuseBtn}
+                    ${unfuseBtn}
+                    ${revertBtn}
+                </div>`;
+        });
+        switchScreen('screen-party');
+    }
+
+    function tryFuse(materialIdx) {
+        let activeMon = game.party[game.activeIndex];
+        let materialMon = game.party[materialIdx];
+        if (!activeMon || !materialMon) return;
+
+        let baseName = getBaseName(activeMon.name);
+        let matBase = getBaseName(materialMon.name);
+        let recipes = fusionRecipes[baseName];
+        if (!recipes) { log("❌ 선두 포켓몬은 합체할 수 없습니다!"); return; }
+        let recipe = recipes.find(r => r.material === matBase);
+        if (!recipe) { log("❌ 합체 재료가 맞지 않습니다!"); return; }
+
+        const mainBox = document.getElementById('game-main-box');
+        mainBox.classList.add('transform-flash');
+        setTimeout(() => mainBox.classList.remove('transform-flash'), 600);
+
+        // 합체 해제를 위해 원본 두 포켓몬을 통째로 백업해둔다
+        let baseClone = JSON.parse(JSON.stringify(activeMon));
+        let matClone = JSON.parse(JSON.stringify(materialMon));
+        delete baseClone.fusedFrom;
+        delete matClone.fusedFrom;
+
+        let combinedName = baseClone.name;
+        let combinedMatName = matClone.name;
+
+        activeMon.name = `[합체] ${recipe.result}`;
+        activeMon.atk = Math.floor((activeMon.atk + materialMon.atk) * 1.2);
+        activeMon.maxHp += materialMon.maxHp;
+        activeMon.hp = activeMon.maxHp;
+        activeMon.transformed = false;
+        delete activeMon.preTransform;
+        activeMon.fusedFrom = [baseClone, matClone];
+
+        log(`${recipe.icon} ${combinedName}와(과) ${combinedMatName}이(가) 합체하여 [${recipe.result}]이(가) 되었습니다!`);
+
+        game.party.splice(materialIdx, 1);
+        if (materialIdx < game.activeIndex) game.activeIndex--;
+        if (game.activeIndex >= game.party.length) game.activeIndex = 0;
+
+        updateUI();
+        openPartyManagement();
+    }
+
+    function unfuseMon(idx) {
+        let mon = game.party[idx];
+        if (!mon || !mon.fusedFrom) return;
+
+        if (game.party.length >= 6) {
+            log("❌ 파티 공간이 부족하여 합체를 해제할 수 없습니다! (파티 슬롯 필요)");
+            return;
+        }
+
+        const mainBox = document.getElementById('game-main-box');
+        mainBox.classList.add('transform-flash');
+        setTimeout(() => mainBox.classList.remove('transform-flash'), 600);
+
+        let [base, material] = mon.fusedFrom;
+        base.hp = base.maxHp;
+        material.hp = material.maxHp;
+
+        game.party.splice(idx, 1, base, material);
+        game.activeIndex = idx; // 베이스 포켓몬이 선두 자리를 이어받는다
+
+        log(`💫 ${base.name}와(과) ${material.name}의 합체가 해제되었습니다!`);
+        updateUI();
+        openPartyManagement();
+    }
+
+    function switchActivePokemon(idx) { game.activeIndex = idx; switchScreen('screen-battle'); updateUI(); }
+    function closePartyManagement() { switchScreen('screen-battle'); }
+
+    function nextWave() {
+        game.wave++;
+        let mon = game.party[game.activeIndex];
+
+        function proceedToNextWave() {
+            spawnEnemy();
+            switchScreen('screen-battle');
+            log(`--- 🌊 웨이브 ${game.wave} 진입 ---`);
+            updateUI();
+        }
+
+        if (mon && mon.hp > 0) {
+            let oldLevel = mon.level, oldMaxHp = mon.maxHp, oldAtk = mon.atk;
+            mon.level++; mon.maxHp += 15; mon.hp = mon.maxHp; mon.atk += 5;
+            let evo = checkEvolution(mon);
+            if (evo) evolveMon(mon, evo);
+            updateUI();
+            showLevelUpPopup(mon, oldLevel, oldMaxHp, oldAtk, proceedToNextWave);
+        } else {
+            proceedToNextWave();
+        }
+    }
+
+    function buyItem(type, cost) {
+        if (game.money < cost) return;
+
+        if (type === 'shard' || type === 'lump') {
+            let hasFainted = game.party.some(p => p.hp <= 0);
+            if (!hasFainted) { log("💤 기절한 포켓몬이 없어 사용할 수 없습니다."); return; }
+            game.money -= cost;
+            updateUI();
+            openReviveSelect(type, cost);
+            return;
+        }
+
+        game.money -= cost;
+        let mon = game.party[game.activeIndex];
+        if (type === 'candy') {
+            let oldLevel = mon.level, oldMaxHp = mon.maxHp, oldAtk = mon.atk;
+            mon.level++; mon.maxHp += 20; mon.hp += 20; mon.atk += 6;
+            let evo = checkEvolution(mon);
+            if (evo) evolveMon(mon, evo);
+            updateUI();
+            showLevelUpPopup(mon, oldLevel, oldMaxHp, oldAtk, null);
+            return;
+        }
+        else if (type === 'potion') { mon.hp = mon.maxHp; }
+        else if (type === 'balls') { game.balls.poke += 5; game.balls.great += 2; game.balls.ultra += 1; }
+        updateUI();
+    }
+
+    // [부활 아이템: 기력의 조각(50%) / 기력의 덩어리(100%)]
+    let pendingReviveType = null;
+    let pendingReviveCost = 0;
+
+    function openReviveSelect(type, cost) {
+        pendingReviveType = type;
+        pendingReviveCost = cost;
+        const container = document.getElementById('revive-container');
+        container.innerHTML = "";
+        game.party.forEach((p, idx) => {
+            if (p.hp > 0) return;
+            let imgUrl = getPokeImgUrl(p.name, false);
+            container.innerHTML += `
+                <div class="card">
+                    <img src="${imgUrl}" style="height:50px; opacity:0.5; filter:grayscale(1);">
+                    <div>${p.name}</div>
+                    <div>Lv.${p.level} | HP: 0/${p.maxHp}</div>
+                    <button style="width:100%; background:#00c853; color:#fff;" onclick="applyRevive(${idx})">✨ 부활시키기</button>
+                </div>`;
+        });
+        switchScreen('screen-revive');
+    }
+
+    function applyRevive(idx) {
+        let mon = game.party[idx];
+        if (!mon || mon.hp > 0) return;
+        let ratio = pendingReviveType === 'shard' ? 0.5 : 1.0;
+        mon.hp = Math.max(1, Math.floor(mon.maxHp * ratio));
+        log(`✨ ${mon.name}이(가) HP ${Math.floor(ratio * 100)}%로 부활했습니다!`);
+        pendingReviveType = null;
+        pendingReviveCost = 0;
+        updateUI();
+        switchScreen('screen-shop');
+    }
+
+    function cancelRevive() {
+        if (pendingReviveCost > 0) {
+            game.money += pendingReviveCost;
+            log("🔙 부활 아이템 사용을 취소하고 골드를 환불받았습니다.");
+        }
+        pendingReviveType = null;
+        pendingReviveCost = 0;
+        updateUI();
+        switchScreen('screen-shop');
+    }
+
+    function openGacha() {
+        document.getElementById('voucher-count').innerText = game.vouchers;
+        switchScreen('screen-gacha');
+    }
+
+    function pullEgg() {
+        if (game.vouchers <= 0) return;
+        game.vouchers--;
+        let hatched = starterDatabase[Math.floor(Math.random() * starterDatabase.length)].name;
+        if (!game.unlockedStarters.includes(hatched)) game.unlockedStarters.push(hatched);
+        document.getElementById('voucher-count').innerText = game.vouchers;
+        document.getElementById('gacha-result').innerText = `🥚 [ ${hatched} ] 부화 성공!`;
+        updateUI();
+    }
+</script>
+
 </body>
 </html>
