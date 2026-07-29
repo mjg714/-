@@ -595,8 +595,11 @@
 <body>
 
 <div class="game-container" id="game-main-box">
-    <header>
+    <header style="position: relative;">
         <h1>POKÉMON ROGUE: MOBILE TOUCH (FIXED)</h1>
+        <div id="analyst-badge" style="position: absolute; top: 10px; right: 10px; background: rgba(0, 255, 204, 0.2); color: #00ffcc; border: 1px solid #00ffcc; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px; user-select: none; z-index: 100;" onclick="AnalystTracker.toggleInspector()">
+            📊 Analyst Clarity Active
+        </div>
     </header>
 
     <div class="stats-panel" id="stats-panel" style="display: none;">
