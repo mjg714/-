@@ -1,25 +1,172 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <script type="text/javascript">
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "xtscitgy99");
-</script>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-F08MBSX66S"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-F08MBSX66S');
-</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>웹 포켓로그 (Mega Evolution Fix v2)</title>
+    <!-- Microsoft Clarity Tag (Data Analyst Tracking) -->
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "xtscitgy99");
+    </script>
+
+    <!-- Data Analyst Clarity Telemetry Engine & Tag Taxonomy -->
+    <script>
+        (function() {
+            let userId = localStorage.getItem('clarity_analyst_uid');
+            if (!userId) {
+                userId = 'usr_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now().toString(36);
+                localStorage.setItem('clarity_analyst_uid', userId);
+            }
+
+            window.AnalystTracker = {
+                userId: userId,
+                currentRunId: null,
+                debugMode: true,
+                eventsHistory: [],
+                tagsMap: {},
+
+                init() {
+                    try {
+                        if (typeof window.clarity === 'function') {
+                            window.clarity("identify", this.userId);
+                            this.setTag("user_id", this.userId);
+                            this.setTag("app_name", "Web PokeRogue");
+                            this.setTag("app_version", "Mega Evolution Fix v2");
+                            this.setTag("environment", location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'development' : 'production');
+                        }
+                        this.log('📊 [Analyst Clarity] Engine Initialized with User ID:', this.userId);
+                    } catch(e) {
+                        console.error('[Analyst Clarity] Init error:', e);
+                    }
+                },
+
+                setTag(key, value) {
+                    try {
+                        const strVal = String(value);
+                        this.tagsMap[key] = strVal;
+                        if (typeof window.clarity === 'function') {
+                            window.clarity("set", key, strVal);
+                        }
+                        this.log(`🏷️ [Analyst Tag] ${key} = ${strVal}`);
+                        this.updateInspectorUI();
+                    } catch(e) {
+                        console.error('[Analyst Clarity] setTag error:', e);
+                    }
+                },
+
+                setTags(tagsObj) {
+                    for (let key in tagsObj) {
+                        if (Object.prototype.hasOwnProperty.call(tagsObj, key)) {
+                            this.setTag(key, tagsObj[key]);
+                        }
+                    }
+                },
+
+                trackEvent(eventName, payload = {}) {
+                    try {
+                        const evtRecord = { name: eventName, payload: payload, timestamp: new Date().toLocaleTimeString() };
+                        this.eventsHistory.unshift(evtRecord);
+                        if (this.eventsHistory.length > 30) this.eventsHistory.pop();
+
+                        if (typeof window.clarity === 'function') {
+                            window.clarity("event", eventName);
+                        }
+                        this.log(`📈 [Analyst Event] ${eventName}`, payload);
+                        this.updateInspectorUI();
+                    } catch(e) {
+                        console.error('[Analyst Clarity] trackEvent error:', e);
+                    }
+                },
+
+                upgradeSession(reason) {
+                    try {
+                        if (typeof window.clarity === 'function') {
+                            window.clarity("upgrade", reason);
+                        }
+                        this.log(`⭐ [Analyst Session Upgrade] High Priority: ${reason}`);
+                        this.trackEvent("session_upgraded", { reason: reason });
+                    } catch(e) {
+                        console.error('[Analyst Clarity] upgradeSession error:', e);
+                    }
+                },
+
+                trackScreenView(screenName) {
+                    this.setTag("screen_name", screenName);
+                    this.trackEvent("screen_view", { screen: screenName });
+                },
+
+                startRun(partyNames) {
+                    this.currentRunId = 'run_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+                    this.setTag("run_id", this.currentRunId);
+                    this.setTag("game_status", "playing");
+                    this.setTag("starter_pokemon", partyNames.join(','));
+                    this.trackEvent("adventure_start", { run_id: this.currentRunId, party: partyNames });
+                },
+
+                trackGameOver(wave, partyStatus) {
+                    this.setTag("game_status", "game_over");
+                    this.setTag("final_wave", wave);
+                    this.trackEvent("game_over", { wave: wave, party_count: partyStatus ? partyStatus.length : 0 });
+                    this.upgradeSession("game_over");
+                },
+
+                toggleInspector() {
+                    const el = document.getElementById('analyst-inspector-modal');
+                    if (el) {
+                        el.style.display = (el.style.display === 'none' || !el.style.display) ? 'flex' : 'none';
+                        this.updateInspectorUI();
+                    }
+                },
+
+                updateInspectorUI() {
+                    const tagsBox = document.getElementById('analyst-tags-list');
+                    const evtsBox = document.getElementById('analyst-events-list');
+                    if (tagsBox) {
+                        tagsBox.innerHTML = Object.entries(this.tagsMap).map(([k, v]) => 
+                            `<div style="font-size:12px; margin-bottom:3px;"><strong style="color:#f8b000;">${k}:</strong> <span style="color:#fff;">${v}</span></div>`
+                        ).join('');
+                    }
+                    if (evtsBox) {
+                        evtsBox.innerHTML = this.eventsHistory.slice(0, 12).map(e => 
+                            `<div style="font-size:11px; margin-bottom:6px; border-bottom:1px dashed #444; padding-bottom:4px;">
+                                <span style="color:#00ffcc; font-weight:bold;">[${e.timestamp}] ${e.name}</span>
+                                <pre style="margin:2px 0 0 0; font-size:10px; color:#aaa; white-space:pre-wrap;">${JSON.stringify(e.payload)}</pre>
+                            </div>`
+                        ).join('');
+                    }
+                },
+
+                log(...args) {
+                    if (this.debugMode) console.log(...args);
+                }
+            };
+
+            // Global Error Monitoring
+            window.addEventListener('error', function(e) {
+                if (window.AnalystTracker) {
+                    window.AnalystTracker.setTag("last_error", e.message || "Unknown error");
+                    window.AnalystTracker.trackEvent("js_error", { message: e.message, filename: e.filename, lineno: e.lineno });
+                    window.AnalystTracker.upgradeSession("js_error");
+                }
+            });
+
+            window.addEventListener('unhandledrejection', function(e) {
+                if (window.AnalystTracker) {
+                    window.AnalystTracker.setTag("last_error", e.reason ? (e.reason.message || String(e.reason)) : "Unhandled Rejection");
+                    window.AnalystTracker.trackEvent("unhandled_rejection", { reason: String(e.reason) });
+                    window.AnalystTracker.upgradeSession("js_error");
+                }
+            });
+
+            document.addEventListener('DOMContentLoaded', () => {
+                window.AnalystTracker.init();
+            });
+        })();
+    </script>
     <!-- 레트로 둥근모 폰트 CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/dungne/dunggeunmo-font/dunggeunmo.css">
     <style>
@@ -952,6 +1099,10 @@
         currentScreen = screenId;
         document.getElementById('stats-panel').style.display = (screenId === 'screen-menu' || screenId === 'screen-gacha' || screenId === 'screen-starter') ? 'none' : 'flex';
         if (screenId === 'screen-menu') document.getElementById('btn-continue').disabled = game.party.length === 0;
+
+        if (window.AnalystTracker) {
+            window.AnalystTracker.trackScreenView(screenId);
+        }
     }
 
     function continueGame() { if (game.party.length > 0) switchScreen(previousScreen); }
@@ -1024,6 +1175,20 @@
         const arena = document.getElementById('battle-arena');
         if (game.enemy.isBoss) arena.classList.add('boss-bg');
         else arena.classList.remove('boss-bg');
+
+        if (window.AnalystTracker && game) {
+            let activeMon = game.party[game.activeIndex];
+            window.AnalystTracker.setTags({
+                "wave_level": game.wave,
+                "gold_balance": game.money,
+                "voucher_balance": game.vouchers,
+                "party_count": game.party.length,
+                "active_pokemon": activeMon ? activeMon.name : "None",
+                "active_pokemon_hp_pct": activeMon ? Math.round((activeMon.hp / activeMon.maxHp) * 100) : 0,
+                "enemy_pokemon": game.enemy ? game.enemy.name : "None",
+                "enemy_is_boss": game.enemy ? (game.enemy.isBoss ? "true" : "false") : "false"
+            });
+        }
     }
 
     function log(message) {
@@ -1128,6 +1293,11 @@
 
         log(`✨ [진화/폼체인지 성공!] ${baseName}이(가) 변신에 성공했습니다!`);
         updateUI();
+
+        if (window.AnalystTracker) {
+            window.AnalystTracker.trackEvent("pokemon_transformed", { pokemon: baseName, transformed_name: mon.name });
+            window.AnalystTracker.upgradeSession("mega_evolution");
+        }
     }
 
     // [개굴닌자 전용] 상대 포켓몬을 쓰러뜨리면 유대변화로 지우개굴닌자로 자동 변신한다
@@ -1252,6 +1422,10 @@
         switchScreen('screen-battle');
         log(`🚀 포켓몬 모험이 시작되었습니다!`);
         updateUI();
+
+        if (window.AnalystTracker) {
+            window.AnalystTracker.startRun(game.party.map(p => p.name));
+        }
     }
 
     function spawnEnemy() {
@@ -1286,6 +1460,10 @@
                 isBoss: true
             };
             log(`🚨 [전설 출현] 초전설 포켓몬 [${boss.name}]이(가) 나타났습니다!`);
+            if (window.AnalystTracker) {
+                window.AnalystTracker.trackEvent("boss_spawned", { boss_name: boss.name, wave: game.wave });
+                window.AnalystTracker.upgradeSession("boss_fight");
+            }
         } else {
             let wild = normalWilds[Math.floor(Math.random() * normalWilds.length)];
             let levelBoost = Math.floor(game.wave * 1.2);
@@ -1329,6 +1507,16 @@
         game.enemy.hp = Math.max(0, game.enemy.hp - dmg);
         log(`⚔️ ${mon.name}의 [${skill.name}]! ${game.enemy.name}에게 ${dmg}의 데미지!`);
 
+        if (window.AnalystTracker) {
+            window.AnalystTracker.trackEvent("skill_used", {
+                pokemon: mon.name,
+                skill: skill.name,
+                power: skill.power,
+                damage: dmg,
+                target: game.enemy.name
+            });
+        }
+
         checkBattleState();
     }
 
@@ -1358,6 +1546,9 @@
 
         if (Math.random() < catchChance) {
             log(`✨ ${game.enemy.name} 포획 성공!`);
+            if (window.AnalystTracker) {
+                window.AnalystTracker.trackEvent("catch_success", { ball: ballType, pokemon: game.enemy.name, wave: game.wave });
+            }
             let newMon = {
                 name: game.enemy.name,
                 level: game.enemy.level,
@@ -1376,6 +1567,9 @@
             }
         } else {
             log(`💨 포켓몬이 볼에서 빠져나왔다!`);
+            if (window.AnalystTracker) {
+                window.AnalystTracker.trackEvent("catch_failed", { ball: ballType, pokemon: game.enemy.name, wave: game.wave });
+            }
             enemyTurn();
         }
         updateUI();
@@ -1461,6 +1655,9 @@
             let aliveIndex = game.party.findIndex(p => p.hp > 0);
             if (aliveIndex === -1) {
                 alert("파티 전멸! 게임 오버.");
+                if (window.AnalystTracker) {
+                    window.AnalystTracker.trackGameOver(game.wave, game.party);
+                }
                 game.party = [];
                 switchScreen('screen-menu');
             } else {
@@ -1542,6 +1739,10 @@
         activeMon.fusedFrom = [baseClone, matClone];
 
         log(`${recipe.icon} ${combinedName}와(과) ${combinedMatName}이(가) 합체하여 [${recipe.result}]이(가) 되었습니다!`);
+        if (window.AnalystTracker) {
+            window.AnalystTracker.trackEvent("pokemon_fused", { base: combinedName, material: combinedMatName, result: recipe.result });
+            window.AnalystTracker.upgradeSession("pokemon_fusion");
+        }
 
         game.party.splice(materialIdx, 1);
         if (materialIdx < game.activeIndex) game.activeIndex--;
@@ -1590,6 +1791,10 @@
             updateUI();
         }
 
+        if (window.AnalystTracker) {
+            window.AnalystTracker.trackEvent("wave_start", { wave: game.wave, active_pokemon: mon ? mon.name : null });
+        }
+
         if (mon && mon.hp > 0) {
             let oldLevel = mon.level, oldMaxHp = mon.maxHp, oldAtk = mon.atk;
             mon.level++; mon.maxHp += 15; mon.hp = mon.maxHp; mon.atk += 5;
@@ -1628,6 +1833,10 @@
         else if (type === 'potion') { mon.hp = mon.maxHp; }
         else if (type === 'balls') { game.balls.poke += 5; game.balls.great += 2; game.balls.ultra += 1; }
         updateUI();
+
+        if (window.AnalystTracker) {
+            window.AnalystTracker.trackEvent("shop_item_bought", { item_type: type, cost: cost, remaining_gold: game.money });
+        }
     }
 
     // [부활 아이템: 기력의 조각(50%) / 기력의 덩어리(100%)]
@@ -1689,8 +1898,46 @@
         document.getElementById('voucher-count').innerText = game.vouchers;
         document.getElementById('gacha-result').innerText = `🥚 [ ${hatched} ] 부화 성공!`;
         updateUI();
+
+        if (window.AnalystTracker) {
+            let starterData = starterDatabase.find(d => d.name === hatched);
+            let isLegend = starterData ? starterData.isLegend : false;
+            window.AnalystTracker.trackEvent("gacha_pulled", { hatched_pokemon: hatched, is_legendary: isLegend, remaining_vouchers: game.vouchers });
+            if (isLegend) {
+                window.AnalystTracker.upgradeSession("gacha_legendary");
+            }
+        }
     }
 </script>
 
+
+    <!-- Analyst Clarity Telemetry Dashboard Modal -->
+    <div id="analyst-inspector-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: #1e1e28; border: 2px solid #00ffcc; border-radius: 8px; width: 90%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; color: #fff; padding: 16px; font-family: monospace; box-shadow: 0 0 20px rgba(0,255,204,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #00ffcc; padding-bottom: 8px; margin-bottom: 12px;">
+                <h3 style="margin: 0; color: #00ffcc; font-size: 1.1rem;">📊 Microsoft Clarity Analyst Live Dashboard</h3>
+                <button onclick="AnalystTracker.toggleInspector()" style="background: #e03828; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-size: 0.8rem;">✕ 닫기</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; overflow-y: auto; flex: 1;">
+                <div style="background: #14141c; padding: 10px; border-radius: 6px; border: 1px solid #333;">
+                    <h4 style="margin-top: 0; color: #f8b000; font-size: 0.9rem;">🏷️ Custom Tags (Clarity Set)</h4>
+                    <div id="analyst-tags-list"></div>
+                </div>
+                <div style="background: #14141c; padding: 10px; border-radius: 6px; border: 1px solid #333;">
+                    <h4 style="margin-top: 0; color: #00ffcc; font-size: 0.9rem;">📈 Recent Events (Clarity Event)</h4>
+                    <div id="analyst-events-list"></div>
+                </div>
+            </div>
+            <div style="margin-top: 12px; text-align: right; font-size: 11px; color: #888;">
+                Clarity Tag ID: <span style="color:#00ffcc;">xtscitgy99</span> | User ID: <span id="analyst-uid-display" style="color:#f8b000;"></span>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const uidEl = document.getElementById('analyst-uid-display');
+            if (uidEl && window.AnalystTracker) uidEl.innerText = window.AnalystTracker.userId;
+        });
+    </script>
 </body>
 </html>
